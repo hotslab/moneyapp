@@ -1,0 +1,85 @@
+version: '3.5'
+
+# networks:
+#   moneyapp_network:
+#     name: moneyapp_network
+
+volumes:
+  pgdata:
+
+services:
+  postgres:
+    image : postgres:16.1
+    container_name: moneyapp_postgres_db
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_USER: root
+    volumes:
+      # - /etc/timezone:/etc/timezone:rw
+      # - /etc/localtime:/etc/localtime:rw
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    restart: unless-stopped
+    # networks:
+    #   - moneyapp_network
+
+  backend:
+    image : moneyapp_backend
+    container_name: moneyapp_backend
+    build:
+      context: ./
+      dockerfile: backend.dockerfile
+    # working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+      - /var/www/node_modules
+      # - /etc/timezone:/etc/timezone:rw
+      # - /etc/localtime:/etc/localtime:rw
+    ports:
+      - 3333:3333
+    # networks:
+    #   - moneyapp_network
+    environment:
+      - CHOKIDAR_USEPOLLING=1
+      - CHOKIDAR_INTERVAL=5000
+    depends_on:
+      - postgres
+
+  frontend:
+    image : moneyapp_frontend
+    container_name: moneyapp_frontend
+    build:
+      context: ./
+      dockerfile: frontend.dockerfile
+    # working_dir: /var/www
+    volumes:
+       - ./frontend:/var/www
+       - /var/www/node_modules
+      # - /etc/timezone:/etc/timezone:rw
+      # - /etc/localtime:/etc/localtime:rw
+    ports:
+      - 3000:3000
+    # networks:
+    #   - moneyapp_network
+    environment:
+      - CHOKIDAR_USEPOLLING=1
+      # - CHOKIDAR_INTERVAL=2000
+    depends_on:
+      - postgres
+      - backend
+
+  # nginx:
+  #   image : nginx
+  #   container_name: nginx-server
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   restart: always
+  #   build:
+  #     context: ./
+  #     dockerfile: nginx.dockerfile
+  #   ports:
+  #     - 3050:80
+  #   networks:
+  #     - the_continental
