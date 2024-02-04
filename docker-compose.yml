@@ -42,7 +42,7 @@ services:
     #   - moneyapp_network
     environment:
       - CHOKIDAR_USEPOLLING=1
-      - CHOKIDAR_INTERVAL=5000
+      - CHOKIDAR_INTERVAL=6000
     depends_on:
       - postgres
 
@@ -64,7 +64,6 @@ services:
     #   - moneyapp_network
     environment:
       - CHOKIDAR_USEPOLLING=1
-      # - CHOKIDAR_INTERVAL=2000
     depends_on:
       - postgres
       - backend
