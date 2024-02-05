@@ -6,6 +6,7 @@ import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
+import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -36,4 +37,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => Notification)
   declare notifications: HasMany<typeof Notification>
+
+  static accessTokens = DbAccessTokensProvider.forModel(User, {
+    expiresIn: '24 hours',
+    prefix: 'oat_',
+    table: 'auth_access_tokens',
+    type: 'auth_token',
+    tokenSecretLength: 40,
+  })
 }

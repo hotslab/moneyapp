@@ -11,13 +11,13 @@ export default class Reversal extends BaseModel {
   declare idempotencyKey: string
 
   @column()
-  declare tranasctionId: number
-
-  @column()
   declare amount: number
 
   @column()
   declare accountId: number
+
+  @column()
+  declare tranasctionId: number
 
   @column()
   declare senderId: number

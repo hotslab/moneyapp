@@ -12,10 +12,10 @@ export default class Transaction extends BaseModel {
   declare idempotencyKey: string
 
   @column()
-  declare accountId: number
+  declare amount: number
 
   @column()
-  declare amount: number
+  declare accountId: number
 
   @column()
   declare senderId: number
