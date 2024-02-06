@@ -7,7 +7,7 @@ networks:
 services:
   moneyapp_postgres:
     image : postgres:16.1
-    container_name: moneyapp_postgres_db
+    container_name: moneyapp_postgres
     environment:
       POSTGRES_PASSWORD: example
       POSTGRES_USER: root

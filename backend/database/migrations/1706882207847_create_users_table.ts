@@ -8,6 +8,7 @@ export default class extends BaseSchema {
       table.increments('id').notNullable()
       table.string('user_name').notNullable().unique()
       table.string('email', 254).notNullable().unique()
+      table.boolean('verified').defaultTo(false)
       table.string('password').notNullable()
 
       table.timestamp('created_at').notNullable()

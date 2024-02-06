@@ -10,11 +10,13 @@ export default class UserSeeder extends BaseSeeder {
         email: 'doe@test.com',
         userName: 'johnDoe',
         password: 'test',
+        verified: true,
       },
       {
         email: 'new@test.com',
         userName: 'janeNew',
         password: 'test',
+        verified: true,
       },
     ])
     for (const user of users) {
