@@ -5,7 +5,7 @@ import Currency from '#models/currency'
 
 export default class UserSeeder extends BaseSeeder {
   async run() {
-    const users = await User.fetchOrCreateMany('email', [
+    const users = await User.updateOrCreateMany('email', [
       {
         email: 'doe@test.com',
         userName: 'johnDoe',
@@ -15,6 +15,18 @@ export default class UserSeeder extends BaseSeeder {
       {
         email: 'new@test.com',
         userName: 'janeNew',
+        password: 'test',
+        verified: true,
+      },
+      {
+        email: 'hotslices7@gmail.com',
+        userName: 'hotslices',
+        password: 'test',
+        verified: true,
+      },
+      {
+        email: 'gomantrix@gmail.com',
+        userName: 'gomantrix',
         password: 'test',
         verified: true,
       },

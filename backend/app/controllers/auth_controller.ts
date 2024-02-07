@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
-import Account from '#models/account'
 import mail from '@adonisjs/mail/services/main'
 import VerifyEmailNotification from '#mails/verify_email_notification'
 import encryption from '@adonisjs/core/services/encryption'
@@ -15,15 +14,14 @@ export default class AuthController {
     const token = await User.accessTokens.create(user)
     response.status(200).send({
       user: user,
-      accounts: await user.preload('accounts'),
+      accounts: await user.load('accounts'),
       token: token.value!.release(),
     })
   }
 
   async register({ request, response }: HttpContext) {
     const user: User = await User.create(request.only(['user_name', 'email', 'password']))
-    await Account.create({
-      userId: user.id,
+    await user.related('accounts').create({
       currencyId: request.input('currency_id'),
     })
     const emailVerifyToken = encryption.encrypt(

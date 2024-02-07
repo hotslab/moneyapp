@@ -6,7 +6,8 @@ export default class UsersController {
    * Display a list of resource
    */
   async index({ response }: HttpContext) {
-    const users: User[] = await User.all()
+    const users: Array<User> = await User.query().preload('accounts').preload('notifications')
+    console.log(users)
     response.status(200).send({ users: users })
   }
 
@@ -27,8 +28,8 @@ export default class UsersController {
     const user: User = await User.findOrFail(params.id)
     response.status(200).send({
       user: user,
-      accounts: await user.preload('accounts'),
-      notifications: await user.preload('notifications'),
+      accounts: await user.load('accounts'),
+      notifications: await user.load('notifications'),
     })
   }
 
@@ -45,7 +46,7 @@ export default class UsersController {
     user.userName = request.input('user_name')
     user.email = request.input('email')
     await user.save()
-    response.status(200).send({ message: `${user.userName} updated successfully` })
+    response.status(200).send({ message: `${user.userName} updated successfully`, user: user })
   }
 
   /**

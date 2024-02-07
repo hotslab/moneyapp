@@ -30,6 +30,9 @@ export default class Account extends BaseModel {
   @belongsTo(() => Currency)
   declare currency: BelongsTo<typeof Currency>
 
-  @hasMany(() => Transaction)
-  declare transactions: HasMany<typeof Transaction>
+  @hasMany(() => Transaction, { foreignKey: 'senderAccountId' })
+  declare sentTransactions: HasMany<typeof Transaction>
+
+  @hasMany(() => Transaction, { foreignKey: 'recipientAccountId' })
+  declare receivedTransactions: HasMany<typeof Transaction>
 }
