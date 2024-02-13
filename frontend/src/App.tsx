@@ -19,7 +19,7 @@ function App() {
   }
 
   useEffect(() => {
-    subscribe("show_loading", (value: boolean) => setShowLoading(value));
+    // subscribe("show_loading", (value: boolean) => setShowLoading(value));
     subscribe(
       "show_notification",
       (data: { type: string; message: string }) => {
@@ -29,7 +29,7 @@ function App() {
       }
     );
     return () => {
-      unsubscribe("show_loading");
+      // unsubscribe("show_loading");
       unsubscribe("show_notification");
     };
   }, []);

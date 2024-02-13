@@ -11,9 +11,10 @@ export default class AccountsController {
       .preload('currency')
       .preload('user')
       .where('user_id', request.input('user_id'))
-    response
-      .status(200)
-      .send({ accounts: accounts, user: accounts.length > 0 ? accounts[0].user : null })
+    response.status(200).send({
+      accounts: accounts,
+      user: accounts.length > 0 ? accounts[0].user : null,
+    })
   }
 
   /**
@@ -62,16 +63,21 @@ export default class AccountsController {
     }
     const account: Account = await Account.findOrFail(params.id)
     await account.load('currency')
-    let serializedAccount = account.serialize()
-    let newAmount = request.input('amount') //* Math.pow(10, account.currency.decimalDigits)
-    console.log('VVALUES', { json: serializedAccount.amount, new: newAmount, og: account.amount })
+    let newAmount = request.input('amount')
+    console.log('VVALUES', { new: newAmount, og: account.amount })
     if (request.input('action') === Action.WITHDRAW) {
-      if (newAmount > account.amount)
+      if (Number.parseFloat(newAmount) > account.amount)
         response.status(400).send({ message: 'Amount withdrawn is greater than balance' })
-      else
-        account.amount = Number.parseFloat(serializedAccount.amount) - Number.parseFloat(newAmount)
-    } else if (request.input('action') === Action.ADD)
-      account.amount = Number.parseFloat(serializedAccount.amount) + Number.parseFloat(newAmount)
+      else account.amount = account.amount - Number.parseFloat(newAmount)
+    } else if (request.input('action') === Action.ADD) {
+      console.log(
+        'ADDING',
+        account.amount + Number.parseFloat(newAmount),
+        account.amount,
+        Number.parseFloat(newAmount)
+      )
+      account.amount = account.amount + Number.parseFloat(newAmount)
+    }
     await account.save()
     response
       .status(200)

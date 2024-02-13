@@ -16,7 +16,7 @@ function WithdrawOrAdd(props: {
   const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
   const actionTypes: Array<string> = ["withdraw", "add"];
-  const [amount, setAmount] = useState<string>("0");
+  const [amount, setAmount] = useState<string>("");
   const [action, setAction] = useState<string>("");
 
   function showValidator() {

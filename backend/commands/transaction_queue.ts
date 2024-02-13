@@ -10,7 +10,7 @@ import Account from '#models/account'
 
 export default class TransactionQueue extends BaseCommand {
   static commandName = 'transaction:queue'
-  static description = ''
+  static description = 'Command to start the transaction queue for processing payments'
 
   static options: CommandOptions = {
     startApp: true,
@@ -37,27 +37,26 @@ export default class TransactionQueue extends BaseCommand {
             const senderAccount: Account = await Account.findOrFail(job.data.sender_account_id)
             const receiverAccount: Account = await Account.findOrFail(job.data.recipient_account_id)
             this.logger.info(
-              `TRANSACTION: Accounts => ${JSON.stringify({ sender: senderAccount, receiver: receiverAccount })}`
-            )
-            const senderSerializedAccount = senderAccount.serialize()
-            const receiverSerializedAccount = receiverAccount.serialize()
-            this.logger.error(
-              `TRANSACTION: Serialized Accounts => ${JSON.stringify({ sender: senderSerializedAccount, receiver: receiverSerializedAccount })}`
+              `TRANSACTION: Accounts => ${JSON.stringify({ data: job.data, sender: senderAccount, receiver: receiverAccount })}`
             )
             const transaction: Transaction = await Transaction.create(job.data)
-            senderAccount.amount =
-              Number.parseFloat(job.data.sender_amount) -
-              Number.parseFloat(senderSerializedAccount.amount)
-            receiverAccount.amount =
-              Number.parseFloat(job.data.recipient_amount) +
-              Number.parseFloat(receiverSerializedAccount.amount)
-            senderAccount.save()
-            receiverAccount.save()
-            await mail.sendLater(new TransactionEmailNotification(transaction, true))
-            await mail.sendLater(new TransactionEmailNotification(transaction, false))
-            this.logger.info(
-              `TRANSACTION: Email notification jobs created for job ${job.id}-${job.name} => ${JSON.stringify(transaction)}`
-            )
+            if (transaction) {
+              senderAccount.amount =
+                senderAccount.amount - Number.parseFloat(job.data.sender_amount)
+              receiverAccount.amount =
+                receiverAccount.amount +
+                Number.parseFloat(job.data.recipient_amount)
+              senderAccount.save()
+              receiverAccount.save()
+              await mail.sendLater(new TransactionEmailNotification(transaction, true))
+              await mail.sendLater(new TransactionEmailNotification(transaction, false))
+              this.logger.info(
+                `TRANSACTION: Email notification jobs created for job ${job.id}-${job.name} => ${JSON.stringify(transaction)}`
+              )
+            } else
+              this.logger.error(
+                `TRANSACTION: Transaction job ${job.id}-${job.name} failed in wrttig to database with data => ${JSON.stringify(job.data)}`
+              )
           } else
             this.logger.info(
               `TRANSACTION: This job ${job.id}-${job.name} was already completed. Transaction ID ${exists.id} - ${exists.idempotencyKey} not done with data => ${JSON.stringify(job.data)}`

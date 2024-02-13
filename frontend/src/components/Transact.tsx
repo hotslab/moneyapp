@@ -75,7 +75,7 @@ function Transact(props: {
 
   function submitPayment() {
     if (validator.current.allValid()) {
-      if (props.senderAccount.amount < amount)
+      if (Number.parseFloat(props.senderAccount.amount) < Number.parseFloat(amount))
         return dispatch("show_notification", {
           message: "Amount withdrawn is greater than balance",
           type: "error",
@@ -94,8 +94,8 @@ function Transact(props: {
             sender_currency_symbol: props.senderAccount.currency.symbol,
             sender_account_id: props.senderAccount.id,
             sender_account_number: props.senderAccount.id,
-            sender_name: props.senderAccount.userName,
-            sender_email: props.senderAccount.email,
+            sender_name: props.authUser.user.userName,
+            sender_email: props.authUser.user.email,
             // recipient details
             recipient_amount: differentCurrencies
               ? Number.parseFloat(`${convertedAmount}`).toFixed(2)
@@ -104,8 +104,8 @@ function Transact(props: {
             recipient_currency_symbol: props.receiverAccount.currency.symbol,
             recipient_account_id: props.receiverAccount.id,
             recipient_account_number: props.receiverAccount.id,
-            recipient_name: props.receiverAccount.userName,
-            recipient_email: props.receiverAccount.email,
+            recipient_name: props.accountUser.userName,
+            recipient_email: props.accountUser.email,
           },
           {
             headers: {

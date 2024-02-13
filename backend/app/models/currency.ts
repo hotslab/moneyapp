@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import Transaction from './transaction.js'
 
 export default class Currency extends BaseModel {
   @column({ isPrimary: true })
@@ -31,4 +33,9 @@ export default class Currency extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @hasMany(() => Transaction, {
+    foreignKey: 'senderCurrencyId'
+  })
+  declare senderTransactions: HasMany<typeof Transaction>
 }

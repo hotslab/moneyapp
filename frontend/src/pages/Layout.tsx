@@ -89,7 +89,7 @@ function Layout() {
                     (link, index) =>
                       ((link.auth && authUser) ||
                         (link.guest && !authUser)) && (
-                        <a
+                        <button
                           key={index}
                           onClick={() => navigateTo(link.url)}
                           className={clsx(
@@ -98,15 +98,15 @@ function Layout() {
                           )}
                         >
                           {link.name}
-                        </a>
+                        </button>
                       )
                   )}
-                  <a
+                  <button
                     onClick={logOut}
                     className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
                   >
                     Logout
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -164,7 +164,7 @@ function Layout() {
               {links.map(
                 (link, index) =>
                   ((link.auth && authUser) || (link.guest && !authUser)) && (
-                    <a
+                    <button
                       key={index}
                       onClick={() => navigateTo(link.url)}
                       className={clsx(
@@ -175,15 +175,15 @@ function Layout() {
                       aria-current="page"
                     >
                       {link.name}
-                    </a>
+                    </button>
                   )
               )}
-              <a
+              <button
                 onClick={logOut}
                 className="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
               >
                 Logout
-              </a>
+              </button>
             </div>
           </div>
         )}

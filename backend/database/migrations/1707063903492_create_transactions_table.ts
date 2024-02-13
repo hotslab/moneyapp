@@ -10,13 +10,17 @@ export default class extends BaseSchema {
       table.enu('transaction_type', ['DEPOSIT', 'TRANSFER', 'WITHDRAW'], {
         useNative: true,
         enumName: 'transaction_types',
-        existingType: false,
+        existingType: true,
       })
       table.decimal('conversion_rate')
 
       // sender details
       table.integer('sender_amount').defaultTo(0)
-      table.integer('sender_currency_id').references('currencies.id')
+      table
+        .integer('sender_currency_id')
+        .references('currencies.id')
+        .onUpdate('CASCADE')
+        .onDelete('RESTRICT')
       table.string('sender_currency_symbol')
       table
         .integer('sender_account_id')
@@ -30,7 +34,11 @@ export default class extends BaseSchema {
 
       // recipient details
       table.integer('recipient_amount').defaultTo(0)
-      table.integer('recipient_currency_id').references('currencies.id')
+      table
+        .integer('recipient_currency_id')
+        .references('currencies.id')
+        .onUpdate('CASCADE')
+        .onDelete('RESTRICT')
       table.string('recipient_currency_symbol')
       table
         .integer('recipient_account_id')

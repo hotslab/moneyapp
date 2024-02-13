@@ -5,7 +5,7 @@ import Notification from '#models/notification'
 
 export default class NotificationQueue extends BaseCommand {
   static commandName = 'notification:queue'
-  static description = ''
+  static description = 'Command to start the notification queue for sending notifications from the server'
 
   static options: CommandOptions = {
     startApp: true,

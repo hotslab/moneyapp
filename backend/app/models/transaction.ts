@@ -1,9 +1,19 @@
 import Account from '#models/account'
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo, beforeSave } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import {
+  BaseModel,
+  column,
+  belongsTo,
+  beforeSave,
+  computed,
+  afterFetch,
+  hasOne,
+  afterFind,
+} from '@adonisjs/lucid/orm'
+import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
 import Currency from './currency.js'
 import { LucidRow } from '@adonisjs/lucid/types/model'
+import { hasOnlyExpressionInitializer } from 'typescript'
 
 export default class Transaction extends BaseModel {
   @column({ isPrimary: true })
@@ -20,14 +30,14 @@ export default class Transaction extends BaseModel {
 
   // sender details
   @column({
-    serialize: (value: number, attribute: string, model: LucidRow) => {
-      if (value) {
-        let relations = model.serializeRelations()
-        console.log('SENDER', relations)
-        const balance = value / Math.pow(10, relations.senderCurrency.decimalDigits)
-        return Number.parseFloat(`${balance}`).toFixed(2)
-      } else return value
-    },
+    // serialize: (value: number, attribute: string, model: LucidRow) => {
+    //   if (value) {
+    //     let relations = model.serializeRelations()
+    //     console.log('SENDER', relations)
+    //     const balance = value / Math.pow(10, relations.senderCurrency.decimalDigits)
+    //     return Number.parseFloat(`${balance}`).toFixed(2)
+    //   } else return value
+    // },
   })
   declare senderAmount: number
 
@@ -50,23 +60,14 @@ export default class Transaction extends BaseModel {
   declare senderEmail: string
 
   // recipient details
-  @column({
-    serialize: (value: number, attribute: string, model: LucidRow) => {
-      if (value) {
-        let relations = model.serializeRelations()
-        console.log('RECEIVER', relations)
-        const balance = value / Math.pow(10, relations.recipientCurrency.decimalDigits)
-        return Number.parseFloat(`${balance}`).toFixed(2)
-      } else return value
-    },
-  })
+  @column()
   declare recipientAmount: number
 
   @column()
   declare recipientCurrencyId: number
 
   @column()
-  declare recipienCurrencySymbol: string
+  declare recipientCurrencySymbol: string
 
   @column()
   declare recipientAccountId: number
@@ -86,11 +87,11 @@ export default class Transaction extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @belongsTo(() => Currency, { localKey: 'senderCurrencyId' })
-  declare senderCurrency: BelongsTo<typeof Currency>
+  @hasOne(() => Currency, { localKey: 'senderCurrencyId', foreignKey: 'id' })
+  declare senderCurrency: HasOne<typeof Currency>
 
-  @belongsTo(() => Currency, { localKey: 'recipientCurrencyId' })
-  declare recipientCurrency: BelongsTo<typeof Currency>
+  @hasOne(() => Currency, { localKey: 'recipientCurrencyId', foreignKey: 'id' })
+  declare recipientCurrency: HasOne<typeof Currency>
 
   @belongsTo(() => Account, { localKey: 'senderAccountId' })
   declare senderAccount: BelongsTo<typeof Account>
@@ -99,16 +100,58 @@ export default class Transaction extends BaseModel {
   declare recipientAccount: BelongsTo<typeof Account>
 
   @beforeSave()
-  static async saveAmountAsInteger(transaction: Transaction) {
-    if (transaction.$dirty.senderAmount) {
-      await transaction.load('senderCurrency')
-      transaction.senderAmount =
-        transaction.senderAmount * Math.pow(10, transaction.senderCurrency.decimalDigits)
+  static async saveAmountsAsInteger(transaction: Transaction) {
+    try {
+      if (transaction.$dirty.senderAmount) {
+        const senderCurrency = await Currency.find(transaction.senderCurrencyId)
+        if (senderCurrency)
+          transaction.senderAmount = Math.round(
+            transaction.senderAmount *
+              (senderCurrency.decimalDigits <= 0 ? 1 : Math.pow(10, senderCurrency.decimalDigits))
+          )
+      }
+      if (transaction.$dirty.recipientAmount) {
+        const recipientCurrency = await Currency.find(transaction.recipientCurrencyId)
+        if (recipientCurrency)
+          transaction.recipientAmount = Math.round(
+            transaction.recipientAmount *
+              (recipientCurrency.decimalDigits <= 0
+                ? 1
+                : Math.pow(10, recipientCurrency.decimalDigits))
+          )
+      }
+    } catch (error) {
+      console.log('SAVE TRANSACTION AMOUNT ERROR', error)
     }
-    if (transaction.$dirty.recipientAmount) {
-      await transaction.load('recipientCurrency')
-      transaction.recipientAmount =
-        transaction.recipientAmount * Math.pow(10, transaction.recipientCurrency.decimalDigits)
+  }
+
+  @afterFind()
+  static async getSingleTransaction(transaction: Transaction) {
+    const senderCurrency = await Currency.find(transaction.senderCurrencyId)
+    const receiverCurrency = await Currency.find(transaction.recipientCurrencyId)
+    if (senderCurrency) {
+      const balance = transaction.senderAmount / Math.pow(10, senderCurrency.decimalDigits)
+      transaction.senderAmount = Number.parseFloat(`${balance}`)
+    }
+    if (receiverCurrency) {
+      const balance = transaction.recipientAmount / Math.pow(10, receiverCurrency.decimalDigits)
+      transaction.recipientAmount = Number.parseFloat(`${balance}`)
+    }
+  }
+
+  @afterFetch()
+  static async getMultipleTransactions(transactions: Transaction[]) {
+    for (const transaction of transactions) {
+      const senderCurrency = await Currency.find(transaction.senderCurrencyId)
+      const receiverCurrency = await Currency.find(transaction.recipientCurrencyId)
+      if (senderCurrency) {
+        const balance = transaction.senderAmount / Math.pow(10, senderCurrency.decimalDigits)
+        transaction.senderAmount = Number.parseFloat(`${balance}`)
+      }
+      if (receiverCurrency) {
+        const balance = transaction.recipientAmount / Math.pow(10, receiverCurrency.decimalDigits)
+        transaction.recipientAmount = Number.parseFloat(`${balance}`)
+      }
     }
   }
 }

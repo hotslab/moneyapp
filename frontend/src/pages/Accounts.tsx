@@ -64,12 +64,12 @@ function Accounts() {
   }
 
   function getAccounts(authUser: any) {
-    dispatch("show_loading", true);
+    // dispatch("show_loading", true);
     axiosApi.get(`api/accounts?user_id=${userId}`).then(
       (response: AxiosResponse) => {
         setAccountUser(response.data.user);
         setAccounts(response.data.accounts);
-        dispatch("show_loading", false);
+        // dispatch("show_loading", false);
         sessionStorage.setItem(
           "isAuthUserOnAccounts",
           JSON.stringify(response.data.user.id === authUser.user.id)
@@ -77,12 +77,13 @@ function Accounts() {
       },
       (error) => {
         console.log(error);
-        dispatch("show_loading", false);
+        // dispatch("show_loading", false);
       }
     );
   }
 
   useEffect(() => {
+    console.log('HAS BEEN RUN TOO MUCH')
     const authUser = JSON.parse(sessionStorage.getItem("authUser") as string);
     setAuthUser(authUser);
     getAccounts(authUser);

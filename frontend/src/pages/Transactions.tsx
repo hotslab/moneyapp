@@ -15,17 +15,25 @@ function Transactions() {
     navigate(`/accounts/${accountId}`);
   }
 
+  function isSender(senderId: number): boolean {
+    return accountId ? Number.parseInt(accountId) === senderId : false;
+  }
+
+  function isReceiver(receiverId: number): boolean {
+    return accountId ? Number.parseInt(accountId) === receiverId : false;
+  }
+
   useEffect(() => {
     setAuthUser(JSON.parse(sessionStorage.getItem("authUser") as string));
-    dispatch("show_loading", true);
+    // dispatch("show_loading", true);
     axiosApi.get(`api/transactions?account_id=${accountId}`).then(
       (response) => {
         setTransactions(response.data.transactions);
-        dispatch("show_loading", false);
+        // dispatch("show_loading", false);
       },
       (error) => {
         console.log(error);
-        dispatch("show_loading", false);
+        // dispatch("show_loading", false);
       }
     );
   }, []);
@@ -69,7 +77,7 @@ function Transactions() {
                   <th scope="col" className="px-6 py-3">
                     Account No.
                   </th>
-                  <th scope="col" className="px-6 py-3">
+                  <th scope="col" className="px-6 py-3 text-right">
                     Date
                   </th>
                 </tr>
@@ -86,49 +94,64 @@ function Transactions() {
                     >
                       <span
                         className={clsx(
-                          transaction.senderAccountId === accountId
-                            ? "text-red-700"
-                            : "text-green-700"
+                          isSender(transaction.senderAccountNumber) &&
+                            "text-red-700",
+                          isReceiver(transaction.recipientAccountNumber) &&
+                            "text-green-700"
                         )}
                       >
-                        {transaction.senderAccountId === accountId
-                          ? "Sent"
-                          : "Received"}
+                        {isSender(transaction.senderAccountNumber) && "Sent"}
+                        {isReceiver(transaction.recipientAccountNumber) &&
+                          "Received"}
                       </span>
                     </th>
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
                     >
-                      {transaction.currency.name} {transaction.amount}
+                      {isSender(transaction.senderAccountNumber) &&
+                        `
+                      ${transaction.senderCurrencySymbol} 
+                      ${Number.parseFloat(transaction.senderAmount).toFixed(
+                        2
+                      )}`}
+                      {isReceiver(transaction.recipientAccountNumber) &&
+                        `
+                      ${transaction.recipientCurrencySymbol} 
+                      ${Number.parseFloat(transaction.recipientAmount).toFixed(
+                        2
+                      )}`}
                     </th>
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
                     >
-                      {transaction.senderAccountId === accountId
-                        ? transaction.recipientName
-                        : transaction.senderName}
+                      {isReceiver(transaction.recipientAccountNumber) &&
+                        transaction.senderName}
+                      {isSender(transaction.senderAccountNumber) &&
+                        transaction.recipientName}
                     </th>
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
                     >
-                      {transaction.senderAccountId === accountId
-                        ? transaction.recipientEmail
-                        : transaction.senderEmail}
+                      {isReceiver(transaction.recipientAccountNumber) &&
+                        transaction.senderEmail}
+                      {isSender(transaction.senderAccountNumber) &&
+                        transaction.recipientEmail}
                     </th>
                     <th
                       scope="row"
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
                     >
-                      {transaction.senderAccountId === accountId
-                        ? transaction.recipientAccountNumber
-                        : transaction.senderAccountNumber}
+                      {isReceiver(transaction.recipientAccountNumber) &&
+                        transaction.senderAccountNumber}
+                      {isSender(transaction.senderAccountNumber) &&
+                        transaction.recipientAccountNumber}
                     </th>
                     <th
                       scope="row"
-                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+                      className="px-6 py-4 font-medium text-right text-gray-900 whitespace-nowrap"
                     >
                       {transaction.createdAt}
                     </th>

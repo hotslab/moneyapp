@@ -7,7 +7,7 @@ import { inject } from '@adonisjs/core'
 
 export default class EmailQueue extends BaseCommand {
   static commandName = 'email:queue'
-  static description = 'Command to start email queue worker'
+  static description = 'Command to start the email queue for processing email messages to clients'
 
   static options: CommandOptions = {
     startApp: true,

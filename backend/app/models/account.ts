@@ -2,7 +2,16 @@ import User from '#models/user'
 import Currency from '#models/currency'
 import Transaction from '#models/transaction'
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo, hasMany, beforeSave } from '@adonisjs/lucid/orm'
+import {
+  BaseModel,
+  column,
+  belongsTo,
+  hasMany,
+  beforeSave,
+  computed,
+  afterFind,
+  afterFetch,
+} from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { LucidRow } from '@adonisjs/lucid/types/model'
 
@@ -16,16 +25,7 @@ export default class Account extends BaseModel {
   @column()
   declare currencyId: number
 
-  @column({
-    serialize: (value: number, attribute: string, model: LucidRow) => {
-      if (value) {
-        let relations = model.serializeRelations()
-        console.log('ACCOUNT SERIAL', relations)
-        const balance = value / Math.pow(10, relations.currency.decimalDigits)
-        return Number.parseFloat(`${balance}`).toFixed(2)
-      } else return value
-    },
-  })
+  @column()
   declare amount: number
 
   @column.dateTime({ autoCreate: true })
@@ -40,7 +40,7 @@ export default class Account extends BaseModel {
   @belongsTo(() => Currency)
   declare currency: BelongsTo<typeof Currency>
 
-  @hasMany(() => Transaction, { foreignKey: 'senderAccountId' })
+  @hasMany(() => Transaction, { localKey: 'id', foreignKey: 'senderAccountId' })
   declare sentTransactions: HasMany<typeof Transaction>
 
   @hasMany(() => Transaction, { foreignKey: 'recipientAccountId' })
@@ -50,9 +50,60 @@ export default class Account extends BaseModel {
   static async saveAmountAsInteger(account: Account) {
     if (account.$dirty.amount) {
       console.log('beforeSave INVOKED', account.amount)
-      await account.load('currency')
-      const a = Number.parseFloat(`${account.amount}`)
-      account.amount = a * Math.pow(10, account.currency.decimalDigits)
+      const currency = await Currency.find(account.currencyId)
+      if (currency) {
+        console.log(
+          'BEFORE',
+          account.amount,
+          currency.decimalDigits,
+          currency.decimalDigits <= 0,
+          Math.pow(10, currency.decimalDigits)
+        )
+        account.amount = Math.round(
+          account.amount * (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
+        )  
+        console.log(
+          'AFTER',
+          account.amount,
+          currency.decimalDigits,
+          currency.decimalDigits <= 0,
+          Math.pow(10, currency.decimalDigits)
+        )
+      }
+    }
+  }
+
+  @afterFind()
+  static async getSingleAccount(account: Account) {
+    // const currency = await Currency.find(account.currencyId)
+    const currency = await account
+      .related('currency')
+      .query()
+      .where('id', account.currencyId)
+      .first()
+    if (currency) {
+      const balance =
+        account.amount / (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
+      account.amount = Number.parseFloat(`${balance}`)
+      // account.save()
+    }
+  }
+
+  @afterFetch()
+  static async getMultipleAccounts(accounts: Account[]) {
+    for (const account of accounts) {
+      const currency = await account
+        .related('currency')
+        .query()
+        .where('id', account.currencyId)
+        .first()
+      // const currency = await Currency.find(account.currencyId)
+      if (currency) {
+        const balance =
+          account.amount / (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
+        account.amount = Number.parseFloat(`${balance}`)
+        // account.save()
+      }
     }
   }
 }
