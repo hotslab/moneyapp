@@ -3,6 +3,7 @@ import User from '#models/user'
 import mail from '@adonisjs/mail/services/main'
 import VerifyEmailNotification from '#mails/verify_email_notification'
 import encryption from '@adonisjs/core/services/encryption'
+import NotificationService from '#services/notification_service'
 
 export default class AuthController {
   async login({ request, response }: HttpContext) {
@@ -41,7 +42,12 @@ export default class AuthController {
       const user: User = await User.findOrFail(userData.id)
       user.verified = true
       await user.save()
-      response.status(200).send({ message: `${user.email} verified successfully` })
-    }
+      const notificationService: NotificationService = new NotificationService()
+      notificationService.queue('email_verified', {
+        user_id: user.id,
+        message: `Your email ${user.email} was verified successfully`,
+      })
+      response.status(200).send({ message: `Your email ${user.email} was verified successfully` })
+    } else response.status(400).send({ message: `Failed to verify email. Please try again` })
   }
 }

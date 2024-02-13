@@ -5,6 +5,22 @@ import Currency from '#models/currency'
 
 export default class UserSeeder extends BaseSeeder {
   async run() {
+    const currencies = [
+      'EUR',
+      'GBP',
+      'USD',
+      'JPY',
+      'CHF',
+      'AUD',
+      'CAD',
+      'CNY',
+      'NZD',
+      'INR',
+      'BZR',
+      'SEK',
+      'ZAR',
+      'HKD',
+    ]
     const users = await User.updateOrCreateMany('email', [
       {
         email: 'doe@test.com',
@@ -32,7 +48,10 @@ export default class UserSeeder extends BaseSeeder {
       },
     ])
     for (const user of users) {
-      const currency = await Currency.findBy('code', 'USD')
+      const currency = await Currency.findBy(
+        'code',
+        currencies[Math.floor(Math.random() * currencies.length)]
+      )
       if (currency)
         await Account.firstOrCreate({ userId: user.id, currencyId: currency.id }, { amount: 0 })
     }

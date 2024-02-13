@@ -1,3 +1,6 @@
 redis/*
 pgdata/*
 dev.sh
+npmCacheBackend/*
+npmCacheFrontend/*
+.env

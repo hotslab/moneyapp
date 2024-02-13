@@ -5,11 +5,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive ACCEPT_EULA=Y apt-get insta
 WORKDIR /var/www
 
 # COPY backend.env ./.env
-COPY ./backend/package*.json ./
-RUN npm i
+COPY ./backend/package.json ./
+# COPY ./backend/package-lock.json ./
+# RUN npm i --loglevel verbose
+# RUN --mount=type=cache,target=/root/.npm npm ci
+RUN npm i --loglevel verbose --cache /root/.npm
 COPY ./backend ./
-
-EXPOSE 3333
 
 ADD backend-supervisor.conf /etc/supervisor/conf.d/backend-supervisor.conf
 

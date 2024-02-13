@@ -1,4 +1,5 @@
 import Account from '#models/account'
+import Currency from '#models/currency'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AccountsController {
@@ -6,12 +7,13 @@ export default class AccountsController {
    * Display a list of resource
    */
   async index({ request, response }: HttpContext) {
-    console.log(request.all())
     const accounts: Array<Account> = await Account.query()
       .preload('currency')
+      .preload('user')
       .where('user_id', request.input('user_id'))
-      .paginate(request.input('page'), 15)
-    response.status(200).send({ accounts: accounts })
+    response
+      .status(200)
+      .send({ accounts: accounts, user: accounts.length > 0 ? accounts[0].user : null })
   }
 
   /**
@@ -35,6 +37,7 @@ export default class AccountsController {
     response.status(200).send({
       account: account,
       currency: await account.load('currency'),
+      user: await account.load('user'),
       // receivedTransactions: await account.load('receivedTransactions', (query) => {
       //   query.whereNotNull('sender_account_id').orWhereNull('sender_account_id')
       // }),
@@ -52,7 +55,28 @@ export default class AccountsController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request }: HttpContext) {}
+  async update({ params, request, response }: HttpContext) {
+    enum Action {
+      ADD = 'add',
+      WITHDRAW = 'withdraw',
+    }
+    const account: Account = await Account.findOrFail(params.id)
+    await account.load('currency')
+    let serializedAccount = account.serialize()
+    let newAmount = request.input('amount') //* Math.pow(10, account.currency.decimalDigits)
+    console.log('VVALUES', { json: serializedAccount.amount, new: newAmount, og: account.amount })
+    if (request.input('action') === Action.WITHDRAW) {
+      if (newAmount > account.amount)
+        response.status(400).send({ message: 'Amount withdrawn is greater than balance' })
+      else
+        account.amount = Number.parseFloat(serializedAccount.amount) - Number.parseFloat(newAmount)
+    } else if (request.input('action') === Action.ADD)
+      account.amount = Number.parseFloat(serializedAccount.amount) + Number.parseFloat(newAmount)
+    await account.save()
+    response
+      .status(200)
+      .send({ message: `Account No. ${account.id} updated successfully`, account: account })
+  }
 
   /**
    * Delete record
@@ -64,7 +88,7 @@ export default class AccountsController {
       await authUser.related('accounts').query().where('id', params.id).delete()
       response.status(200).send({ message: `Account No. ${params.id} deleted successfully` })
     } else
-      response.status(500).send({
+      response.status(400).send({
         message: `Account No. ${params.id} is your only account, so you cannot delete it from your profile.`,
       })
   }

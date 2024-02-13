@@ -46,10 +46,12 @@ services:
     volumes:
       - ./backend:/var/www
       - /var/www/node_modules
+      - ./npmCacheBackend:/root/.npm
       # - /etc/timezone:/etc/timezone:rw
       # - /etc/localtime:/etc/localtime:rw
     ports:
       - 3333:3333
+      - 4444:4444
     networks:
       - moneyapp_network
     environment:
@@ -68,6 +70,7 @@ services:
     volumes:
        - ./frontend:/var/www
        - /var/www/node_modules
+       - ./npmCacheFrontend:/root/.npm
       # - /etc/timezone:/etc/timezone:rw
       # - /etc/localtime:/etc/localtime:rw
     ports:
@@ -80,3 +83,18 @@ services:
       - moneyapp_postgres
       - moneyapp_redis
       - moneyapp_backend
+
+  moneyapp_nginx:
+    image : nginx
+    container_name: moneyapp_nginx
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: nginx.dockerfile
+    ports:
+      - 3050:80
+    networks:
+      - moneyapp_network
+    depends_on:
+      - moneyapp_backend
+      - moneyapp_frontend

@@ -24,9 +24,9 @@ router.get('/', async () => {
 
 router
   .group(() => {
-    router.post('login', [AuthController, 'login'])
+    router.post('/login', [AuthController, 'login'])
     router.post('register', [AuthController, 'register'])
-    router.post('verify-email', [AuthController, 'verifyEmail'])
+    router.get('verify-email/:token', [AuthController, 'verifyEmail'])
     router.resource('currencies', CurrenciesController)
   })
   .prefix('/api')

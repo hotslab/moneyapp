@@ -10,7 +10,6 @@ export default class TransactionsController {
     const transactions: Array<Transaction> = await Transaction.query()
       .where('sender_account_id', request.input('account_id'))
       .orWhere('recipient_account_id', request.input('account_id'))
-      .paginate(1, 15)
     response.status(200).send({ transactions: transactions })
   }
 
@@ -26,16 +25,24 @@ export default class TransactionsController {
     const transactionService = new TransactionService()
     await transactionService.queue({
       idempotency_key: request.header('idempotency_key') as string,
-      amount: Number.parseInt(request.input('amount') as string),
-      currency_id: Number.parseInt(request.input('currency_id') as string),
+      transaction_type: request.input('transaction_type') as string,
+      conversion_rate: Number.parseFloat(request.input('conversion_rate') as string),
+      // sender details
+      sender_amount: Number.parseFloat(request.input('sender_amount') as string),
+      sender_currency_id: Number.parseInt(request.input('sender_currency_id') as string),
+      sender_currency_symbol: request.input('sender_currency_symbol') as string,
       sender_account_id: Number.parseInt(request.input('sender_account_id') as string),
       sender_account_number: Number.parseInt(request.input('sender_account_number') as string),
+      sender_name: request.input('sender_name') as string,
+      sender_email: request.input('sender_email') as string,
+      // recipient details
+      recipient_amount: Number.parseFloat(request.input('recipient_amount') as string),
+      recipient_currency_id: Number.parseInt(request.input('recipient_currency_id') as string),
+      recipient_currency_symbol: request.input('recipient_currency_symbol') as string,
       recipient_account_id: Number.parseInt(request.input('recipient_account_id') as string),
       recipient_account_number: Number.parseInt(
         request.input('recipient_account_number') as string
       ),
-      sender_name: request.input('sender_name') as string,
-      sender_email: request.input('sender_email') as string,
       recipient_name: request.input('recipient_name') as string,
       recipient_email: request.input('recipient_email') as string,
     })

@@ -20,7 +20,7 @@ export default class VerifyEmailNotification extends BaseMail {
     this.message.to(this.user.email).html(`
       <h1> Hello ${this.user.userName} </h1>
       <p> Please verify your email address ${this.user.email} by clicking the following link below: </p>
-      <p> <a href="https://localhost:3000/verify_email?token=${this.emailVerifyToken}">Verify email</a></p>
+      <p> <a href="http://localhost:3000/verify-email/${this.emailVerifyToken}">Verify email</a></p>
     `)
   }
 }

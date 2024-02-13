@@ -1,37 +1,54 @@
-import React, { useState } from 'react';
-import api from './api'
-import logo from './logo.svg';
-import './App.css';
+import { RouterProvider } from "react-router-dom";
+import router from "./router";
+import Loading from "./components/Loading";
+import Modal from "./components/Modal";
+import { useEffect, useState } from "react";
+import useEventEmitter from "./helpers/useEventEmitter";
 
 function App() {
-  const [message, setMessage] = useState('')
-  function getWelcome() {
-    api.get('/').then((res:any) => {
-      console.log(res)
-      setMessage(res.data.hello)
-    })
+  const { subscribe, unsubscribe } = useEventEmitter();
+  const [showLoading, setShowLoading] = useState<boolean>(false);
+  const [showNotification, setShowNotification] = useState<boolean>(false);
+  const [notificationMessage, setNotificationMesssage] = useState<string>("");
+  const [notificationType, setNotificationType] = useState<string>("");
+
+  function closeModal() {
+    setShowNotification(false);
+    setNotificationType("");
+    setNotificationMesssage("");
   }
 
+  useEffect(() => {
+    subscribe("show_loading", (value: boolean) => setShowLoading(value));
+    subscribe(
+      "show_notification",
+      (data: { type: string; message: string }) => {
+        setNotificationType(data.type);
+        setNotificationMesssage(data.message);
+        setShowNotification(true);
+      }
+    );
+    return () => {
+      unsubscribe("show_loading");
+      unsubscribe("show_notification");
+    };
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <button onClick={getWelcome}>
-          Click me
-        </button>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React and new things { message }
-        </a>
-      </header>
-    </div>
+    <>
+      {showLoading ? (
+        <Loading />
+      ) : (
+        <RouterProvider router={router} fallbackElement={<Loading />} />
+      )}
+      {showNotification && (
+        <Modal
+          message={notificationMessage}
+          type={notificationType}
+          closeModal={() => closeModal()}
+        />
+      )}
+    </>
   );
 }
 
