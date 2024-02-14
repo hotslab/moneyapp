@@ -109,7 +109,7 @@ function WithdrawOrAdd(props: {
                             {validator.current.message(
                               "amount",
                               amount,
-                              "required|numeric|min:0,num|currency"
+                              "required|numeric|min:1,num|currency"
                             )}
                           </span>
                         </div>

@@ -1,9 +1,8 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
-import mail from '@adonisjs/mail/services/main'
-import VerifyEmailNotification from '#mails/verify_email_notification'
 import encryption from '@adonisjs/core/services/encryption'
 import NotificationService from '#services/notification_service'
+import EmailService from '#services/email_service'
 
 export default class AuthController {
   async login({ request, response }: HttpContext) {
@@ -32,7 +31,8 @@ export default class AuthController {
       },
       '1 day'
     )
-    await mail.sendLater(new VerifyEmailNotification(user, emailVerifyToken))
+    const emailService = new EmailService()
+    emailService.queue({type: 'VERIFY_EMAIL', emailData: {user: user, emailVerifyToken: emailVerifyToken}})
     response.status(200).send({ message: `${user.userName} created successfully` })
   }
 

@@ -155,7 +155,7 @@ function Accounts() {
                       className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
                     >
                       {isAuthUser()
-                        ? `${account.currency?.symbol} ${account.amount}`
+                        ? `${account.currency?.symbol} ${Number.parseFloat(account.amount).toFixed(2)}`
                         : `${accountUser.email}`}
                     </th>
                     <th

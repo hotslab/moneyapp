@@ -40,32 +40,34 @@ function Transact(props: {
   }
 
   function getExchangeRate() {
-    setLoading(true);
-    freecurrencyapi
-      .latest({
-        base_currency: props.senderAccount.currency.code,
-        currencies: props.receiverAccount.currency.code,
-      })
-      .then(
-        (response: any) => {
-          console.log(response.data);
-          const rate: number =
-            response.data[props.receiverAccount.currency.code];
-          const convertedAmont: number = Number.parseFloat(amount) * rate;
-          setConversionRate(rate);
-          setConvertedAmount(convertedAmont);
-          setRateConverted(true);
-          setLoading(false);
-        },
-        (error: any) => {
-          console.log(error.message);
-          dispatch("show_notification", {
-            message: error.message,
-            type: "error",
-          });
-          setLoading(false);
-        }
-      );
+    if (validator.current.allValid()) {
+      setLoading(true);
+      freecurrencyapi
+        .latest({
+          base_currency: props.senderAccount.currency.code,
+          currencies: props.receiverAccount.currency.code,
+        })
+        .then(
+          (response: any) => {
+            console.log(response.data);
+            const rate: number =
+              response.data[props.receiverAccount.currency.code];
+            const convertedAmont: number = Number.parseFloat(amount) * rate;
+            setConversionRate(rate);
+            setConvertedAmount(convertedAmont);
+            setRateConverted(true);
+            setLoading(false);
+          },
+          (error: any) => {
+            console.log(error.message);
+            dispatch("show_notification", {
+              message: error.message,
+              type: "error",
+            });
+            setLoading(false);
+          }
+        );
+    }
   }
 
   function resetExchangeRate() {
@@ -75,7 +77,10 @@ function Transact(props: {
 
   function submitPayment() {
     if (validator.current.allValid()) {
-      if (Number.parseFloat(props.senderAccount.amount) < Number.parseFloat(amount))
+      if (
+        Number.parseFloat(props.senderAccount.amount) <
+        Number.parseFloat(amount)
+      )
         return dispatch("show_notification", {
           message: "Amount withdrawn is greater than balance",
           type: "error",

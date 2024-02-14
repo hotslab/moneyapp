@@ -12,7 +12,7 @@ export default class NotificationService {
       message: string
     }
   ) {
-    const notificationQueue = new Queue('transactions', {
+    const notificationQueue = new Queue('notifications', {
       connection: {
         host: 'moneyapp_redis',
         port: 6379,
