@@ -24,20 +24,11 @@ function Transact(props: {
   const [amount, setAmount] = useState<string>("0");
   const [differentCurrencies, setDifferenctCurrencies] =
     useState<boolean>(true);
+  const [isSameUser, setIsSameUser] = useState<boolean>(false)
   const [rateConverted, setRateConverted] = useState<boolean>(false);
   const [conversionRate, setConversionRate] = useState<number>(0);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
-
-  function displayAmount(
-    symbol: string,
-    amount: number,
-    decimalDigits: number
-  ): string {
-    const a = amount / Math.pow(10, decimalDigits);
-    const b = Number.parseFloat(`${a}`).toFixed(2);
-    return `${symbol} ${b}`;
-  }
 
   function getExchangeRate() {
     if (validator.current.allValid()) {
@@ -90,8 +81,9 @@ function Transact(props: {
         .post(
           `/api/transactions`,
           {
-            idempotencyKey: idempotencyKey,
-            transaction_type: transactionTypes.TRANSFER,
+            transaction_type: isSameUser
+              ? transactionTypes.TRANSFER
+              : transactionTypes.PAYMENT,
             conversion_rate: conversionRate,
             // sender details
             sender_amount: amount,
@@ -144,6 +136,7 @@ function Transact(props: {
   }
   useEffect(() => {
     setIdempotencyKey(uuidv4());
+    setIsSameUser(props.accountUser.id === props.authUser.id)
     setDifferenctCurrencies(
       props.senderAccount.currencyId !== props.receiverAccount.currencyId
     );

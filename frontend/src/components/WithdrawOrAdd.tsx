@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import useValidator from "../helpers/useValidator";
-import Freecurrencyapi from "@everapi/freecurrencyapi-js";
 import axiosApi from "../api";
 import useEventEmitter from "../helpers/useEventEmitter";
 import { AxiosResponse } from "axios";
 import Spinner from "./Spinner";
-import Account from "../pages/Account";
+import { v4 as uuidv4 } from "uuid";
+import transactionTypes from "../types/transactionTypes";
 
 function WithdrawOrAdd(props: {
   authUser: any;
@@ -14,10 +14,15 @@ function WithdrawOrAdd(props: {
 }) {
   const { dispatch } = useEventEmitter();
   const [validator] = useValidator();
+  const actionTypes: Array<string> = ["DEPOSIT", "WIDTHDRAW"];
   const [loading, setLoading] = useState<boolean>(false);
-  const actionTypes: Array<string> = ["withdraw", "add"];
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>('')
+  const [userName, setUserName] = useState<string>('')
+  const [email, setEmail] = useState<string>('')
   const [amount, setAmount] = useState<string>("");
-  const [action, setAction] = useState<string>("");
+  const [action, setAction] =
+    useState<keyof typeof transactionTypes>("DEPOSIT");
+  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
 
   function showValidator() {
     validator.current.showMessageFor("amount");
@@ -26,8 +31,9 @@ function WithdrawOrAdd(props: {
   function submit() {
     if (validator.current.allValid()) {
       if (
-        Number.parseFloat(props.account.amount) < Number.parseFloat(amount) &&
-        action === "withdraw"
+        transactionTypes.WITHDRAW === action &&
+        Number.parseFloat(props.account.amount) <
+        Number.parseFloat(amount)
       )
         return dispatch("show_notification", {
           message: "Amount withdrawn is greater than balance",
@@ -35,15 +41,41 @@ function WithdrawOrAdd(props: {
         });
       setLoading(true);
       axiosApi
-        .put(`/api/accounts/${props.account.id}`, {
-          amount: amount,
-          action: action,
-        })
+        .post(
+          `/api/transactions`,
+          {
+            transaction_type: action,
+            conversion_rate: 1,
+            // sender details
+            sender_amount: Number.parseFloat(`${amount}`).toFixed(2),
+            sender_currency_id: props.account.currency.id,
+            sender_currency_symbol: props.account.currency.symbol,
+            sender_account_id: null,
+            sender_account_number: bankAccountNumber,
+            sender_name: userName,
+            sender_email: email,
+            // recipient details
+            recipient_amount: Number.parseFloat(`${amount}`).toFixed(2),
+            recipient_currency_id: props.account.currency.id,
+            recipient_currency_symbol: props.account.currency.symbol,
+            recipient_account_id: props.account.id,
+            recipient_account_number: props.account.id,
+            recipient_name: props.authUser.user.userName,
+            recipient_email: props.authUser.user.email,
+          },
+          {
+            headers: {
+              idempotency_key: idempotencyKey,
+            },
+          }
+        )
         .then(
           (response: AxiosResponse) => {
             setLoading(false);
             dispatch("show_notification", {
-              message: "Account was updated",
+              message: `Transaction was sent for processing. Please wait for notification via email or 
+                on this app when it has been successfully processed. Your account blance will 
+                then reflect the changes if it succeeded`,
               type: "info",
             });
             props.closeWithdrawOrAddModal(true);
@@ -59,7 +91,10 @@ function WithdrawOrAdd(props: {
     } else validator.current.showMessages();
   }
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    setIdempotencyKey(uuidv4());
+  }, []);
+  
   return (
     <>
       <div
@@ -92,6 +127,68 @@ function WithdrawOrAdd(props: {
                         </span>
                       </p>
                       <div className="mt-2 py-3">
+                        <label className="block text-sm font-medium leading-6 text-gray-900">
+                          Bank Account Number
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={bankAccountNumber}
+                            onChange={(e) =>
+                              setBankAccountNumber(e.target.value)
+                            }
+                            className="block w-full rounded-md border-0 px-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          ></input>
+                          <span className="text-red-700">
+                            {validator.current.message(
+                              "bankAccountNumber",
+                              bankAccountNumber,
+                              "required|numeric"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 py-3">
+                        <label className="block text-sm font-medium leading-6 text-gray-900">
+                          Email address
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="block w-full rounded-md border-0 px-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          ></input>
+                          <span className="text-red-700">
+                            {validator.current.message(
+                              "email",
+                              email,
+                              "required|email"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 py-3">
+                        <label className="block text-sm font-medium leading-6 text-gray-900">
+                          User Name
+                        </label>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="block w-full rounded-md border-0 px-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                          ></input>
+                          <span className="text-red-700">
+                            {validator.current.message(
+                              "userName",
+                              userName,
+                              "required|min:5"
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-2 py-3">
                         <div className="flex items-center justify-between">
                           <label className="block text-sm font-medium leading-6 text-gray-900">
                             Enter Amount
@@ -119,17 +216,16 @@ function WithdrawOrAdd(props: {
                           </label>
                           <select
                             value={action}
-                            onChange={(e) => setAction(e.target.value)}
+                            onChange={(e) =>
+                              setAction(
+                                e.target.value as keyof typeof transactionTypes
+                              )
+                            }
                             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                           >
-                            <option defaultValue="">Select action</option>
                             {actionTypes.map(
                               (action: string, index: number) => (
-                                <option
-                                  key={index}
-                                  value={action}
-                                  className="capitalize"
-                                >
+                                <option key={index} value={action}>
                                   {action}
                                 </option>
                               )

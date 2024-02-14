@@ -173,7 +173,7 @@ function Accounts() {
                         onClick={() => sendMoney(account)}
                         className="font-medium text-green-600 hover:underline mr-2"
                       >
-                        Send
+                        Pay
                       </button>
                     </th>
                     <th
@@ -185,7 +185,7 @@ function Accounts() {
                         onClick={() => openTransactModal(account)}
                         className="font-medium text-orange-600  hover:underline mr-2"
                       >
-                        Pay
+                        Transfer
                       </button>
                     </th>
                     {isAuthUser() && (
@@ -196,7 +196,7 @@ function Accounts() {
                         <button
                           title="Add or withdraw money into this account directly"
                           onClick={() => openWithdrawOrAddModal(account)}
-                          className="font-medium text-orange-600 hover:underline mr-2"
+                          className="font-medium text-purple-700 hover:underline mr-2"
                         >
                           Deposit
                         </button>

@@ -7,7 +7,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       table.string('idempotency_key').notNullable()
-      table.enu('transaction_type', ['DEPOSIT', 'TRANSFER', 'WITHDRAW'], {
+      table.enu('transaction_type', ['DEPOSIT', 'TRANSFER', 'WITHDRAW', 'PAYMENT'], {
         useNative: true,
         enumName: 'transaction_types',
         existingType: true,
@@ -28,7 +28,7 @@ export default class extends BaseSchema {
         .references('accounts.id')
         .onUpdate('CASCADE')
         .onDelete('SET NULL')
-      table.integer('sender_account_number').nullable()
+      table.bigInteger('sender_account_number').nullable()
       table.string('sender_name')
       table.string('sender_email')
 
@@ -46,7 +46,7 @@ export default class extends BaseSchema {
         .references('accounts.id')
         .onUpdate('CASCADE')
         .onDelete('SET NULL')
-      table.integer('recipient_account_number').nullable()
+      table.bigInteger('recipient_account_number').nullable()
       table.string('recipient_name')
       table.string('recipient_email')
 
@@ -58,5 +58,6 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.dropTable(this.tableName)
+    this.schema.raw(`drop type transaction_types`)
   }
 }
