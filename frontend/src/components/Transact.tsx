@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import useValidator from "../helpers/useValidator";
+import useValidator from "../services/useValidator";
 import Freecurrencyapi from "@everapi/freecurrencyapi-js";
-import useEventEmitter from "../helpers/useEventEmitter";
+import useEventEmitter from "../services/useEventEmitter";
 import axiosApi from "../api";
 import { AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
 import Spinner from "./Spinner";
 import transactionTypes from "../types/transactionTypes";
+import MessageTypes from "../types/messageTypes";
+import EmitterEvents from "../types/emitterEvents";
 
 function Transact(props: {
   authUser: any;
@@ -24,7 +26,7 @@ function Transact(props: {
   const [amount, setAmount] = useState<string>("0");
   const [differentCurrencies, setDifferenctCurrencies] =
     useState<boolean>(true);
-  const [isSameUser, setIsSameUser] = useState<boolean>(false)
+  const [isSameUser, setIsSameUser] = useState<boolean>(false);
   const [rateConverted, setRateConverted] = useState<boolean>(false);
   const [conversionRate, setConversionRate] = useState<number>(0);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
@@ -32,6 +34,14 @@ function Transact(props: {
 
   function getExchangeRate() {
     if (validator.current.allValid()) {
+      if (
+        Number.parseFloat(props.senderAccount.amount) <
+        Number.parseFloat(amount)
+      )
+        return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: "Your balance is insufficient",
+          type: MessageTypes.error,
+        });
       setLoading(true);
       freecurrencyapi
         .latest({
@@ -51,9 +61,11 @@ function Transact(props: {
           },
           (error: any) => {
             console.log(error.message);
-            dispatch("show_notification", {
-              message: error.message,
-              type: "error",
+            dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+              message: error.response?.data
+                ? (error.response.data as any).message
+                : error.message,
+              type: MessageTypes.error,
             });
             setLoading(false);
           }
@@ -72,9 +84,9 @@ function Transact(props: {
         Number.parseFloat(props.senderAccount.amount) <
         Number.parseFloat(amount)
       )
-        return dispatch("show_notification", {
-          message: "Amount withdrawn is greater than balance",
-          type: "error",
+        return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: "Your balance is insufficient",
+          type: MessageTypes.error,
         });
       setLoading(true);
       axiosApi
@@ -113,18 +125,20 @@ function Transact(props: {
         .then(
           (response: AxiosResponse) => {
             setLoading(false);
-            dispatch("show_notification", {
+            dispatch(EmitterEvents.SHOW_NOTIFICATION, {
               message:
                 "Transaction was sent for processing. Please wait for notification via email or on this app when it has been successfully processed",
-              type: "info",
+              type: MessageTypes.info,
             });
             props.closeTransactModal(true);
           },
           (error) => {
             setLoading(false);
-            dispatch("show_notification", {
-              message: error.message,
-              type: "error",
+            dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+              message: error.response?.data
+                ? (error.response.data as any).message
+                : error.message,
+              type: MessageTypes.error,
             });
           }
         );
@@ -136,7 +150,9 @@ function Transact(props: {
   }
   useEffect(() => {
     setIdempotencyKey(uuidv4());
-    setIsSameUser(props.accountUser.id === props.authUser.id)
+    setIsSameUser(
+      parseInt(props.accountUser.id) === parseInt(props.authUser.user.id)
+    );
     setDifferenctCurrencies(
       props.senderAccount.currencyId !== props.receiverAccount.currencyId
     );
@@ -155,7 +171,7 @@ function Transact(props: {
         <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             {!loading ? (
-              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-5/6 sm:mx-6">
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full sm:w-5/6 md:w-4/6 lg:w-3/6 sm:mx-6">
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left divide-y divide-gray-300">
@@ -168,8 +184,10 @@ function Transact(props: {
                             ? "Calculate Exchange Rate"
                             : "Send Amount"}
                         </h1>
-                        <p className="text-3xl font-semibold mb-2 leading-6 text-gray-500">
-                          Your Balance Available{" - "}
+                        <p className="text-3xl font-semibold my-4 leading-6 text-gray-500">
+                          Your Available Balance:
+                        </p>
+                        <p className="text-3xl font-semibold my-4 leading-6 text-gray-500">
                           <span className="text-green-700">
                             {props.senderAccount.currency.symbol}{" "}
                             {Number.parseFloat(
@@ -177,31 +195,39 @@ function Transact(props: {
                             ).toFixed(2) || "0.00"}
                           </span>
                         </p>
-                        <p className="text-2xl font-semibold mb-2 leading-6 text-gray-500">
-                          Amount To Be Sent{" - "}
+                        <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
+                          Amount To Be Sent:
+                        </p>
+                        <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
                           <span className="text-red-700">
                             {props.senderAccount.currency.symbol}{" "}
                             {Number.parseFloat(amount).toFixed(2) || "0.00"}
                           </span>
                         </p>
                         {differentCurrencies && rateConverted && (
-                          <p className="text-2xl font-semibold mb-2 leading-6 text-gray-500">
-                            Converted To{" - "}
-                            <span className="text-blue-700">
-                              {props.receiverAccount.currency.symbol}{" "}
-                              {Number.parseFloat(`${convertedAmount}`).toFixed(
-                                2
-                              ) || "0.00"}
-                            </span>
-                          </p>
+                          <>
+                            <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
+                              Converted To:
+                            </p>
+                            <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
+                              <span className="text-blue-700">
+                                {props.receiverAccount.currency.symbol}{" "}
+                                {Number.parseFloat(
+                                  `${convertedAmount}`
+                                ).toFixed(2) || "0.00"}
+                              </span>{" "}
+                              at rate{" "}
+                              <span className="text-blue-700">
+                                {conversionRate}
+                              </span>
+                            </p>
+                          </>
                         )}
                       </div>
                       <div className="mt-2 py-3">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-sm font-medium leading-6 text-gray-900">
-                            Enter Amount To Send
-                          </label>
-                        </div>
+                        <label className="block text-sm font-medium leading-6 text-gray-900">
+                          Enter Amount To Send
+                        </label>
                         <div className="mt-2">
                           <input
                             type="number"
@@ -230,13 +256,13 @@ function Transact(props: {
                           Receiver Details
                         </h1>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          User Name - {props.accountUser.userName}
+                          Account Number - {props.receiverAccount.id}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
                           Email - {props.accountUser.email}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Account Number - {props.receiverAccount.id}
+                          User Name - {props.accountUser.userName}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
                           Currency - {props.receiverAccount.currency.name}
@@ -253,10 +279,13 @@ function Transact(props: {
                           Account Number - {props.senderAccount.id}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
+                          Email - {props.authUser.user.email}
+                        </p>
+                        <p className="font-semibold mb-2 leading-6 text-gray-500">
                           User Name - {props.authUser.user.userName}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Email - {props.authUser.user.email}
+                          Currency - {props.senderAccount.currency.name}
                         </p>
                       </div>
                     </div>
@@ -270,7 +299,7 @@ function Transact(props: {
                         : resetExchangeRate()
                     }
                     type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                    className="inline-flex w-full mb-4 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                   >
                     Cancel
                   </button>
@@ -278,7 +307,7 @@ function Transact(props: {
                     <button
                       onClick={() => getExchangeRate()}
                       type="button"
-                      className="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
+                      className="inline-flex w-full mb-4 justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
                     >
                       Calculate Exchange Rate
                     </button>
@@ -286,7 +315,7 @@ function Transact(props: {
                     <button
                       onClick={() => submitPayment()}
                       type="button"
-                      className="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
+                      className="inline-flex w-full mb-4 justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
                     >
                       Make Payment
                     </button>

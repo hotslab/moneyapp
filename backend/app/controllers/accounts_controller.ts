@@ -1,5 +1,6 @@
 import Account from '#models/account'
 import Currency from '#models/currency'
+import User from '#models/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AccountsController {
@@ -25,9 +26,19 @@ export default class AccountsController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request, response }: HttpContext) {
-    const account: Account = await Account.create(request.all())
-    response.status(200).send({ message: 'New account created successfully', account: account })
+  async store({ auth, request, response }: HttpContext) {
+    const authUser: User = auth.getUserOrFail()
+    const accountExists: Account | null = await Account.query()
+      .where('currencyId', request.input('currency_id'))
+      .where('userId', authUser.id)
+      .first()
+    if (!accountExists) {
+      const account: Account = await Account.create({
+        userId: authUser.id,
+        currencyId: request.input('currency_id'),
+      })
+      response.status(200).send({ message: 'New account created successfully', account: account })
+    } else response.status(400).send({ message: 'Account already exists' })
   }
 
   /**
@@ -57,31 +68,31 @@ export default class AccountsController {
    * Handle form submission for the edit action
    */
   async update({ params, request, response }: HttpContext) {
-    enum Action {
-      ADD = 'add',
-      WITHDRAW = 'withdraw',
-    }
-    const account: Account = await Account.findOrFail(params.id)
-    await account.load('currency')
-    let newAmount = request.input('amount')
-    console.log('VVALUES', { new: newAmount, og: account.amount })
-    if (request.input('action') === Action.WITHDRAW) {
-      if (Number.parseFloat(newAmount) > account.amount)
-        response.status(400).send({ message: 'Amount withdrawn is greater than balance' })
-      else account.amount = account.amount - Number.parseFloat(newAmount)
-    } else if (request.input('action') === Action.ADD) {
-      console.log(
-        'ADDING',
-        account.amount + Number.parseFloat(newAmount),
-        account.amount,
-        Number.parseFloat(newAmount)
-      )
-      account.amount = account.amount + Number.parseFloat(newAmount)
-    }
-    await account.save()
-    response
-      .status(200)
-      .send({ message: `Account No. ${account.id} updated successfully`, account: account })
+    // enum Action {
+    //   ADD = 'add',
+    //   WITHDRAW = 'withdraw',
+    // }
+    // const account: Account = await Account.findOrFail(params.id)
+    // await account.load('currency')
+    // let newAmount = request.input('amount')
+    // console.log('VVALUES', { new: newAmount, og: account.amount })
+    // if (request.input('action') === Action.WITHDRAW) {
+    //   if (Number.parseFloat(newAmount) > account.amount)
+    //     response.status(400).send({ message: 'Amount withdrawn is greater than balance' })
+    //   else account.amount = account.amount - Number.parseFloat(newAmount)
+    // } else if (request.input('action') === Action.ADD) {
+    //   console.log(
+    //     'ADDING',
+    //     account.amount + Number.parseFloat(newAmount),
+    //     account.amount,
+    //     Number.parseFloat(newAmount)
+    //   )
+    //   account.amount = account.amount + Number.parseFloat(newAmount)
+    // }
+    // await account.save()
+    // response
+    //   .status(200)
+    //   .send({ message: `Account No. ${account.id} updated successfully`, account: account })
   }
 
   /**

@@ -5,8 +5,8 @@ export default class VerifyEmailNotification extends BaseMail {
   user: User
   emailVerifyToken: string
   from = 'no-reply@hotslab.com'
-  subject = 'Verify email'
-  constructor({user, emailVerifyToken}: {user: User, emailVerifyToken: string}) {
+  subject = 'MoneyApp - Verify Email'
+  constructor({ user, emailVerifyToken }: { user: User; emailVerifyToken: string }) {
     super()
     this.user = user
     this.emailVerifyToken = emailVerifyToken

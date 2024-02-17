@@ -9,7 +9,7 @@ export default class UsersController {
     const authUser: User = auth.getUserOrFail()
     const users: Array<User> = await User.query()
       .preload('accounts')
-      .preload('notifications')
+      // .preload('notifications')
       .whereNot('id', authUser.id)
     response.status(200).send({ users: users })
   }
@@ -30,9 +30,8 @@ export default class UsersController {
   async show({ params, response }: HttpContext) {
     const user: User = await User.findOrFail(params.id)
     response.status(200).send({
-      user: user,
+      user: user.preload,
       accounts: await user.load('accounts'),
-      notifications: await user.load('notifications'),
     })
   }
 

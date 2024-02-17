@@ -1,11 +1,16 @@
 import clsx from "clsx";
+import MessageTypes from "../types/messageTypes";
+import ServerNotificationTypes from "../types/serverNotificationTypes";
 
-enum MessageTypes {
-  error = "error",
-  info = "info",
-}
-
-function Modal(props: { message: string; type: string; closeModal: Function }) {
+function MessageModal({
+  message,
+  type = "info",
+  closeModal,
+}: {
+  message: string;
+  type: keyof typeof MessageTypes | keyof typeof ServerNotificationTypes | null;
+  closeModal: Function;
+}) {
   return (
     <>
       <div
@@ -24,15 +29,15 @@ function Modal(props: { message: string; type: string; closeModal: Function }) {
                   <div
                     className={clsx(
                       "mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full sm:mx-0 sm:h-10 sm:w-10",
-                      MessageTypes.error == props.type && "bg-red-100",
-                      MessageTypes.info == props.type && "bg-blue-100"
+                      MessageTypes.error === type ? "bg-red-100" : "bg-blue-100"
                     )}
                   >
                     <svg
                       className={clsx(
                         "h-6 w-6",
-                        MessageTypes.error == props.type && "text-red-700",
-                        MessageTypes.info == props.type && "text-blue-700"
+                        MessageTypes.error === type
+                          ? "text-red-700"
+                          : "text-blue-700"
                       )}
                       fill="none"
                       viewBox="0 0 24 24"
@@ -52,15 +57,19 @@ function Modal(props: { message: string; type: string; closeModal: Function }) {
                       id="modal-title"
                       className={clsx(
                         "text-base font-semibold leading-6",
-                        MessageTypes.error == props.type && "text-red-700",
-                        MessageTypes.info == props.type && "text-blue-700"
+                        MessageTypes.error === type
+                          ? "text-red-700"
+                          : "text-blue-700"
                       )}
                     >
-                      {MessageTypes.error == props.type && "Error Notification"}
-                      {MessageTypes.info == props.type && "Info Notification"}
+                      {MessageTypes.error === type
+                        ? "Error Notification"
+                        : "Info Notification"}
                     </h3>
                     <div className="mt-2">
-                      <p className="text-sm font-semibold text-gray-600">{props.message}</p>
+                      <p className="text-sm font-semibold text-gray-600">
+                        {message}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -68,7 +77,7 @@ function Modal(props: { message: string; type: string; closeModal: Function }) {
               <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                 <button
                   type="button"
-                  onClick={() => props.closeModal()}
+                  onClick={() => closeModal()}
                   className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                 >
                   Close
@@ -82,4 +91,4 @@ function Modal(props: { message: string; type: string; closeModal: Function }) {
   );
 }
 
-export default Modal;
+export default MessageModal;

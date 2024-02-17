@@ -1,4 +1,6 @@
+import Account from '#models/account'
 import Transaction from '#models/transaction'
+import User from '#models/user'
 import TransactionService from '#services/transaction_service'
 import type { HttpContext } from '@adonisjs/core/http'
 
@@ -21,7 +23,11 @@ export default class TransactionsController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request, response }: HttpContext) {
+  async store({ auth, request, response }: HttpContext) {
+    const authUser: User = auth.getUserOrFail()
+    let receiverAccount: Account | null = null
+    if (request.input('sender_account_id'))
+      receiverAccount = await Account.find(request.input('sender_account_id'))
     const transactionService = new TransactionService()
     await transactionService.queue({
       idempotency_key: request.header('idempotency_key') as string,
@@ -45,6 +51,8 @@ export default class TransactionsController {
       ),
       recipient_name: request.input('recipient_name') as string,
       recipient_email: request.input('recipient_email') as string,
+      auth_user_id: authUser.id,
+      receiver_user_id: receiverAccount ? receiverAccount.userId : null,
     })
     response.status(200).send({ message: 'Transaction sent for processing.' })
   }

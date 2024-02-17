@@ -1,4 +1,5 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
+import env from '#start/env'
 
 export default class extends BaseSchema {
   protected tableName = 'transactions'
@@ -8,9 +9,9 @@ export default class extends BaseSchema {
       table.increments('id')
       table.string('idempotency_key').notNullable()
       table.enu('transaction_type', ['DEPOSIT', 'TRANSFER', 'WITHDRAW', 'PAYMENT'], {
-        useNative: true,
+        useNative: env.get('POSTGRE_ENUM_USE_NATIVE_TYPE'),
         enumName: 'transaction_types',
-        existingType: true,
+        existingType: env.get('POSTGRE_ENUM_EXISTING_TYPE'),
       })
       table.decimal('conversion_rate')
 

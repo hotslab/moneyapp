@@ -7,7 +7,7 @@ export default class TransactionEmailNotification extends BaseMail {
   isError: boolean
   errorMessage: { message: string; email: string; userName: string } | null
   from = 'no-reply@hotslab.com'
-  subject = `MoneyApp transaction succcess notice`
+  subject = `MoneyApp - Transaction Notice`
   constructor({
     transaction,
     isSender,

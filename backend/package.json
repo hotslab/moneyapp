@@ -66,6 +66,7 @@
     "edge.js": "^6.0.1",
     "luxon": "^3.4.4",
     "pg": "^8.11.3",
+    "redis": "^4.6.13",
     "reflect-metadata": "^0.2.1",
     "socket.io": "^4.7.4"
   },

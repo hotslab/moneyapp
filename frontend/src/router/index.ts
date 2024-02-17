@@ -5,11 +5,13 @@ import Layout from "../pages/Layout";
 import Profile from "../pages/Profile";
 import Users from "../pages/Users";
 import Accounts from "../pages/Accounts";
-import Account from "../pages/Account";
 import Transactions from "../pages/Transactions";
 import Register from "../pages/Register";
 import NotFound from "../pages/NotFound";
 import VerifyEmail from "../pages/VerifyEmail";
+import Notifications from "../pages/Notifications"
+import ResetPassword from "../pages/ResetPassword";
+import ResetPasswordLink from "../pages/ResetPasswordLink";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +31,14 @@ const router = createBrowserRouter([
         Component: Register,
       },
       {
+        path: "reset-password-link",
+        Component: ResetPasswordLink,
+      },
+      {
+        path: "reset-password/:token",
+        Component: ResetPassword,
+      },
+      {
         path: "profile",
         Component: Profile,
       },
@@ -41,12 +51,12 @@ const router = createBrowserRouter([
         Component: Accounts,
       },
       {
-        path: "account/:id",
-        Component: Account,
-      },
-      {
         path: "transactions/:accountId",
         Component: Transactions,
+      },
+      {
+        path: "notifications",
+        Component: Notifications,
       },
       {
         path: "verify-email/:token",

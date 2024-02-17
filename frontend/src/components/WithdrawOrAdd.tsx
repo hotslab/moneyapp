@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import useValidator from "../helpers/useValidator";
+import useValidator from "../services/useValidator";
 import axiosApi from "../api";
-import useEventEmitter from "../helpers/useEventEmitter";
+import useEventEmitter from "../services/useEventEmitter";
 import { AxiosResponse } from "axios";
 import Spinner from "./Spinner";
 import { v4 as uuidv4 } from "uuid";
 import transactionTypes from "../types/transactionTypes";
+import MessageTypes from "../types/messageTypes";
+import EmitterEvents from "../types/emitterEvents";
 
 function WithdrawOrAdd(props: {
   authUser: any;
@@ -14,11 +16,11 @@ function WithdrawOrAdd(props: {
 }) {
   const { dispatch } = useEventEmitter();
   const [validator] = useValidator();
-  const actionTypes: Array<string> = ["DEPOSIT", "WIDTHDRAW"];
+  const actionTypes: Array<string> = ["DEPOSIT", "WITHDRAW"];
   const [loading, setLoading] = useState<boolean>(false);
-  const [bankAccountNumber, setBankAccountNumber] = useState<string>('')
-  const [userName, setUserName] = useState<string>('')
-  const [email, setEmail] = useState<string>('')
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [action, setAction] =
     useState<keyof typeof transactionTypes>("DEPOSIT");
@@ -32,12 +34,11 @@ function WithdrawOrAdd(props: {
     if (validator.current.allValid()) {
       if (
         transactionTypes.WITHDRAW === action &&
-        Number.parseFloat(props.account.amount) <
-        Number.parseFloat(amount)
+        Number.parseFloat(props.account.amount) < Number.parseFloat(amount)
       )
-        return dispatch("show_notification", {
-          message: "Amount withdrawn is greater than balance",
-          type: "error",
+        return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: "Your balance is insufficient",
+          type: MessageTypes.error,
         });
       setLoading(true);
       axiosApi
@@ -50,16 +51,24 @@ function WithdrawOrAdd(props: {
             sender_amount: Number.parseFloat(`${amount}`).toFixed(2),
             sender_currency_id: props.account.currency.id,
             sender_currency_symbol: props.account.currency.symbol,
-            sender_account_id: null,
-            sender_account_number: bankAccountNumber,
+            sender_account_id:
+              action === transactionTypes.DEPOSIT ? null : props.account.id,
+            sender_account_number:
+              action === transactionTypes.DEPOSIT
+                ? bankAccountNumber
+                : props.account.id,
             sender_name: userName,
             sender_email: email,
             // recipient details
             recipient_amount: Number.parseFloat(`${amount}`).toFixed(2),
             recipient_currency_id: props.account.currency.id,
             recipient_currency_symbol: props.account.currency.symbol,
-            recipient_account_id: props.account.id,
-            recipient_account_number: props.account.id,
+            recipient_account_id:
+              action === transactionTypes.WITHDRAW ? null : props.account.id,
+            recipient_account_number:
+              action === transactionTypes.WITHDRAW
+                ? bankAccountNumber
+                : props.account.id,
             recipient_name: props.authUser.user.userName,
             recipient_email: props.authUser.user.email,
           },
@@ -72,20 +81,29 @@ function WithdrawOrAdd(props: {
         .then(
           (response: AxiosResponse) => {
             setLoading(false);
-            dispatch("show_notification", {
+            dispatch(EmitterEvents.SHOW_NOTIFICATION, {
               message: `Transaction was sent for processing. Please wait for notification via email or 
                 on this app when it has been successfully processed. Your account blance will 
                 then reflect the changes if it succeeded`,
-              type: "info",
+              type: MessageTypes.info,
             });
             props.closeWithdrawOrAddModal(true);
           },
           (error) => {
-            setLoading(false);
-            dispatch("show_notification", {
-              message: error.message,
-              type: "error",
+            let errorBody = error.response?.data as any;
+            let message = "";
+            if (errorBody) {
+              if (errorBody.errors)
+                for (const [index, err] of errorBody.errors.entries())
+                  message += `${index + 1}. ${err.message} `;
+              else if (errorBody.message) message = errorBody.message;
+              else message = error.message;
+            }
+            dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+              message: message,
+              type: MessageTypes.error,
             });
+            setLoading(false);
           }
         );
     } else validator.current.showMessages();
@@ -94,7 +112,7 @@ function WithdrawOrAdd(props: {
   useEffect(() => {
     setIdempotencyKey(uuidv4());
   }, []);
-  
+
   return (
     <>
       <div
@@ -108,7 +126,7 @@ function WithdrawOrAdd(props: {
         <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             {!loading ? (
-              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-5/6 sm:mx-6">
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full sm:w-5/6 md:w-4/6 lg:w-3/6 sm:mx-6">
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mt-3 w-full text-center sm:ml-4 sm:mt-0 sm:text-left divide-y divide-gray-300">
@@ -119,8 +137,10 @@ function WithdrawOrAdd(props: {
                         Direct Deposit or Withdraw from Account No.{" "}
                         {props.account.id}
                       </h1>
-                      <p className="text-3xl font-semibold mb-2 leading-6 text-gray-500 py-3">
-                        Balance Available{" - "}
+                      <p className="text-3xl font-semibold my-4 leading-6 text-gray-500 py-3">
+                        Balance Available:
+                      </p>
+                      <p className="text-3xl font-semibold my-4 leading-6 text-gray-500 py-3">
                         <span className="text-green-700">
                           {props.account.currency.symbol}{" "}
                           {props.account.amount || 0}
@@ -189,11 +209,9 @@ function WithdrawOrAdd(props: {
                         </div>
                       </div>
                       <div className="mt-2 py-3">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-sm font-medium leading-6 text-gray-900">
-                            Enter Amount
-                          </label>
-                        </div>
+                        <label className="block text-sm font-medium leading-6 text-gray-900">
+                          Enter Amount
+                        </label>
                         <div className="mt-3">
                           <input
                             type="number"
@@ -247,14 +265,14 @@ function WithdrawOrAdd(props: {
                   <button
                     onClick={() => props.closeWithdrawOrAddModal()}
                     type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                    className="inline-flex w-full mb-4 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => submit()}
                     type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
+                    className="inline-flex w-full mb-4 justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
                   >
                     Submit
                   </button>

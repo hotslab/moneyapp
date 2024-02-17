@@ -19,8 +19,12 @@ export default class TransactionService {
     recipient_account_number: number
     recipient_name: string
     recipient_email: string
+    auth_user_id: number
+    receiver_user_id: number | null
   }) {
-    const transactionQueue = new Queue('transactions', { connection: { host: 'moneyapp_redis', port: 6379, }, })
+    const transactionQueue = new Queue('transactions', {
+      connection: { host: 'moneyapp_redis', port: 6379 },
+    })
     await transactionQueue.add('create_transaction', transactionData)
   }
 }

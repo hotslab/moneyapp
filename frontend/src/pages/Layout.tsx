@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import api from "../api";
+import { useEffect, useState } from "react";
 import {
   Location,
   NavigateFunction,
@@ -8,19 +7,25 @@ import {
   useNavigate,
 } from "react-router-dom";
 import clsx from "clsx";
-import useEventEmitter from "../helpers/useEventEmitter";
+import useEventEmitter from "../services/useEventEmitter";
+import axiosApi from "../api";
+import { AxiosResponse } from "axios";
+import EmitterEvents from "../types/emitterEvents";
+import IconCurrencyFill from "../components/IconCurrencyFill";
 
 function Layout() {
   const navigate: NavigateFunction = useNavigate();
   const location: Location = useLocation();
-  const {subscribe, unsubscribe} = useEventEmitter();
-  const [message, setMessage] = useState<string>("");
+  const { subscribe, unsubscribe } = useEventEmitter();
+  const [notifications, setNotifications] = useState<Array<any>>([]);
   const [authUser, setAuthUser] = useState<{ user: any; token: string } | null>(
     null
   );
   const [showMenu, setShowMenu] = useState<boolean>(false);
+  // const [isVerified, setIsVerified] = useState<boolean>(false);
   const links = [
     { name: "Profile", url: "/profile", auth: true, guest: false },
+    { name: "Notifications", url: "/notifications", auth: true, guest: false },
     { name: "Home", url: "/", auth: false, guest: true },
     { name: "Login", url: "/login", auth: false, guest: true },
     { name: "Register", url: "/register", auth: false, guest: true },
@@ -33,13 +38,6 @@ function Layout() {
     "text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium";
   const mobileActiveRouteClass =
     "bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium";
-
-  function getWelcome() {
-    api.get("/").then((res: any) => {
-      console.log(res);
-      setMessage(res.data.hello);
-    });
-  }
 
   function toggleMenu() {
     console.log(showMenu, "RUNNING");
@@ -54,18 +52,47 @@ function Layout() {
   function logOut() {
     setShowMenu(false);
     sessionStorage.removeItem("authUser");
-    setAuthUser(null)
+    setAuthUser(null);
     navigate("/");
   }
 
+  function isVerified(url: string): boolean {
+    if (url === "/profile") return true;
+    return authUser?.user.verified;
+  }
+
+  function getCurrentNotifications() {
+    axiosApi.get(`api/notifications`).then(
+      (response: AxiosResponse) => {
+        setNotifications(
+          response.data.notifications.filter(
+            (notification: any) => notification.read === false
+          )
+        );
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+  }
+
   useEffect(() => {
-    setAuthUser(JSON.parse(sessionStorage.getItem("authUser") as string) || null);
-    subscribe("set_auth_user", () => {
-      console.log('running auth')
+    setAuthUser(
+      JSON.parse(sessionStorage.getItem("authUser") as string) || null
+    );
+    subscribe(EmitterEvents.SET_AUTH_USER, () =>
       setAuthUser(JSON.parse(sessionStorage.getItem("authUser") as string))
-    });
+    );
+    subscribe(EmitterEvents.LOAD_NOTIFICATIONS, () => getCurrentNotifications);
+    subscribe(EmitterEvents.SET_NOTIFICATIONS, (notifications: Array<any>) =>
+      setNotifications(
+        notifications.filter((notification: any) => notification.read === false)
+      )
+    );
     return () => {
-      unsubscribe("set_auth_user");
+      unsubscribe(EmitterEvents.SET_AUTH_USER);
+      unsubscribe(EmitterEvents.LOAD_NOTIFICATIONS);
+      unsubscribe(EmitterEvents.SET_NOTIFICATIONS);
     };
   }, []);
 
@@ -76,30 +103,54 @@ function Layout() {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <img
-                  className="h-8 w-8"
-                  src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-                  alt="Your Company"
-                ></img>
+                <IconCurrencyFill
+                  className="text-pink-500"
+                  width="40px"
+                  height="40px"
+                />
               </div>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4">
                   {/* <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" --> */}
                   {links.map(
                     (link, index) =>
-                      ((link.auth && authUser) ||
-                        (link.guest && !authUser)) && (
+                      ((link.auth && authUser && isVerified(link.url)) ||
+                        (link.guest && !authUser)) &&
+                      (link.url === "/notifications" ? (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => navigateTo(link.url)}
+                          className={clsx(
+                            location.pathname === link.url && activeRouteClass,
+                            location.pathname !== link.url &&
+                              inactiveRouteClass,
+                            "relative inline-flex items-center"
+                          )}
+                        >
+                          <span>Notifications</span>
+                          {notifications.length > 0 && (
+                            <div
+                              className={clsx(
+                                "absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-2 -end-2 dark:border-gray-900"
+                              )}
+                            >
+                              {notifications.length}
+                            </div>
+                          )}
+                        </button>
+                      ) : (
                         <button
                           key={index}
                           onClick={() => navigateTo(link.url)}
                           className={clsx(
-                            location.pathname == link.url && activeRouteClass,
-                            location.pathname != link.url && inactiveRouteClass
+                            location.pathname === link.url && activeRouteClass,
+                            location.pathname !== link.url && inactiveRouteClass
                           )}
                         >
                           {link.name}
                         </button>
-                      )
+                      ))
                   )}
                   <button
                     onClick={logOut}
@@ -163,20 +214,47 @@ function Layout() {
             <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
               {links.map(
                 (link, index) =>
-                  ((link.auth && authUser) || (link.guest && !authUser)) && (
+                  ((link.auth && authUser && isVerified(link.url)) ||
+                    (link.guest && !authUser)) &&
+                  (link.url === "/notifications" ? (
                     <button
                       key={index}
                       onClick={() => navigateTo(link.url)}
                       className={clsx(
-                        location.pathname == link.url && mobileActiveRouteClass,
-                        location.pathname != link.url &&
+                        location.pathname === link.url &&
+                          mobileActiveRouteClass,
+                        location.pathname !== link.url &&
+                          mobileInactiveRouteClass,
+                        "relative inline-flex items-center"
+                      )}
+                      aria-current="page"
+                    >
+                      <span>Notifications</span>
+                      {notifications.length > 0 && (
+                        <div
+                          className={clsx(
+                            "absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 border-white rounded-full -top-2 -end-2 dark:border-gray-900"
+                          )}
+                        >
+                          {notifications.length}
+                        </div>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      key={index}
+                      onClick={() => navigateTo(link.url)}
+                      className={clsx(
+                        location.pathname === link.url &&
+                          mobileActiveRouteClass,
+                        location.pathname !== link.url &&
                           mobileInactiveRouteClass
                       )}
                       aria-current="page"
                     >
                       {link.name}
                     </button>
-                  )
+                  ))
               )}
               <button
                 onClick={logOut}

@@ -7,7 +7,7 @@ import axios, {
 import router from "../router";
 
 let axiosApi = axios.create({
-  baseURL: `http://localhost:3333`,
+  baseURL: process.env.REACT_APP_API_URL,
 });
 
 axiosApi.interceptors.request.use(

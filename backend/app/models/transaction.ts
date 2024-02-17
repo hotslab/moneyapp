@@ -14,6 +14,7 @@ import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
 import Currency from './currency.js'
 import { LucidRow } from '@adonisjs/lucid/types/model'
 import { hasOnlyExpressionInitializer } from 'typescript'
+import TransactionTypes from '../types/transaction_types.js'
 
 export default class Transaction extends BaseModel {
   @column({ isPrimary: true })
@@ -23,22 +24,13 @@ export default class Transaction extends BaseModel {
   declare idempotencyKey: string
 
   @column()
-  declare transactionType: string
+  declare transactionType: keyof typeof TransactionTypes
 
   @column()
   declare conversionRate: number
 
   // sender details
-  @column({
-    // serialize: (value: number, attribute: string, model: LucidRow) => {
-    //   if (value) {
-    //     let relations = model.serializeRelations()
-    //     console.log('SENDER', relations)
-    //     const balance = value / Math.pow(10, relations.senderCurrency.decimalDigits)
-    //     return Number.parseFloat(`${balance}`).toFixed(2)
-    //   } else return value
-    // },
-  })
+  @column()
   declare senderAmount: number
 
   @column()

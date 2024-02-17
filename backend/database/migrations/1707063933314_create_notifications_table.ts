@@ -8,6 +8,7 @@ export default class extends BaseSchema {
       table.increments('id')
       table.integer('user_id').references('users.id').onUpdate('CASCADE').onDelete('CASCADE')
       table.string('message').notNullable()
+      table.string('type').notNullable()
       table.boolean('read').defaultTo(false)
 
       table.timestamp('created_at')
