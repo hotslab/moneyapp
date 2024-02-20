@@ -132,14 +132,16 @@ function Accounts() {
                 <span className="text-blue-600">{accounts.length}</span>
               </h1>
               <div className="sm:flex sm:justify-center sm:items-center">
-                <button
-                  type="submit"
-                  onClick={openCreateAccountModal}
-                  // className="bg-green-600 mr-2 sm:ml-2 rounded p-1 text-white font-semibold text-sm hover:bg-green-500"
-                  className="flex justify-center my-2 mr-2 sm:ml-2 rounded-md bg-green-700 hover:bg-green-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white"
-                >
-                  Create Account
-                </button>
+                {isAuthUser() && (
+                  <button
+                    type="submit"
+                    onClick={openCreateAccountModal}
+                    // className="bg-green-600 mr-2 sm:ml-2 rounded p-1 text-white font-semibold text-sm hover:bg-green-500"
+                    className="flex justify-center my-2 mr-2 sm:ml-2 rounded-md bg-green-700 hover:bg-green-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white"
+                  >
+                    Create Account
+                  </button>
+                )}
                 <button
                   type="submit"
                   onClick={goBack}

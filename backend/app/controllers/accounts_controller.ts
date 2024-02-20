@@ -1,6 +1,11 @@
 import Account from '#models/account'
-import Currency from '#models/currency'
 import User from '#models/user'
+import {
+  deleteAccountValidator,
+  indexAccountValidator,
+  showAccountValidator,
+  storeAccountValidator,
+} from '#validators/account'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AccountsController {
@@ -8,10 +13,13 @@ export default class AccountsController {
    * Display a list of resource
    */
   async index({ request, response }: HttpContext) {
+    const data = { id: request.input('user_id') }
+    const payload = await indexAccountValidator.validate(data)
     const accounts: Array<Account> = await Account.query()
       .preload('currency')
       .preload('user')
-      .where('user_id', request.input('user_id'))
+      .where('user_id', payload.id)
+      .orderBy('createdAt', 'desc')
     response.status(200).send({
       accounts: accounts,
       user: accounts.length > 0 ? accounts[0].user : null,
@@ -27,15 +35,16 @@ export default class AccountsController {
    * Handle form submission for the create action
    */
   async store({ auth, request, response }: HttpContext) {
+    const payload = await request.validateUsing(storeAccountValidator)
     const authUser: User = auth.getUserOrFail()
     const accountExists: Account | null = await Account.query()
-      .where('currencyId', request.input('currency_id'))
+      .where('currencyId', payload.currency_id)
       .where('userId', authUser.id)
       .first()
     if (!accountExists) {
       const account: Account = await Account.create({
         userId: authUser.id,
-        currencyId: request.input('currency_id'),
+        currencyId: payload.currency_id,
       })
       response.status(200).send({ message: 'New account created successfully', account: account })
     } else response.status(400).send({ message: 'Account already exists' })
@@ -45,17 +54,13 @@ export default class AccountsController {
    * Show individual record
    */
   async show({ params, response }: HttpContext) {
-    const account: Account = await Account.findOrFail(params.id)
+    const data = { id: params.id }
+    const payload = await showAccountValidator.validate(data)
+    const account: Account = await Account.findOrFail(payload.id)
     response.status(200).send({
       account: account,
       currency: await account.load('currency'),
       user: await account.load('user'),
-      // receivedTransactions: await account.load('receivedTransactions', (query) => {
-      //   query.whereNotNull('sender_account_id').orWhereNull('sender_account_id')
-      // }),
-      // sentTransactions: await account.load('sentTransactions', (query) => {
-      //   query.whereNotNull('recipient_account_id').orWhereNull('recipient_account_id')
-      // }),
     })
   }
 
@@ -67,46 +72,22 @@ export default class AccountsController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request, response }: HttpContext) {
-    // enum Action {
-    //   ADD = 'add',
-    //   WITHDRAW = 'withdraw',
-    // }
-    // const account: Account = await Account.findOrFail(params.id)
-    // await account.load('currency')
-    // let newAmount = request.input('amount')
-    // console.log('VVALUES', { new: newAmount, og: account.amount })
-    // if (request.input('action') === Action.WITHDRAW) {
-    //   if (Number.parseFloat(newAmount) > account.amount)
-    //     response.status(400).send({ message: 'Amount withdrawn is greater than balance' })
-    //   else account.amount = account.amount - Number.parseFloat(newAmount)
-    // } else if (request.input('action') === Action.ADD) {
-    //   console.log(
-    //     'ADDING',
-    //     account.amount + Number.parseFloat(newAmount),
-    //     account.amount,
-    //     Number.parseFloat(newAmount)
-    //   )
-    //   account.amount = account.amount + Number.parseFloat(newAmount)
-    // }
-    // await account.save()
-    // response
-    //   .status(200)
-    //   .send({ message: `Account No. ${account.id} updated successfully`, account: account })
-  }
+  async update({ params, request, response }: HttpContext) {}
 
   /**
    * Delete record
    */
   async destroy({ auth, params, response }: HttpContext) {
+    const data = { id: params.id }
+    const payload = await deleteAccountValidator.validate(data)
     const authUser = auth.getUserOrFail()
     await authUser.load('accounts')
     if (authUser.accounts.length > 1) {
-      await authUser.related('accounts').query().where('id', params.id).delete()
-      response.status(200).send({ message: `Account No. ${params.id} deleted successfully` })
+      await authUser.related('accounts').query().where('id', payload.id).delete()
+      response.status(200).send({ message: `Account No. ${payload.id} deleted successfully` })
     } else
       response.status(400).send({
-        message: `Account No. ${params.id} is your only account, so you cannot delete it from your profile.`,
+        message: `Account No. ${payload.id} is your only account, so you cannot delete it from your profile.`,
       })
   }
 }

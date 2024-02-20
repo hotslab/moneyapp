@@ -2,14 +2,18 @@ import { useEffect, useState } from "react";
 import useValidator from "../services/useValidator";
 import axiosApi from "../api";
 import useEventEmitter from "../services/useEventEmitter";
-import { AxiosResponse } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import Spinner from "./Spinner";
-import { v4 as uuidv4 } from "uuid";
 import transactionTypes from "../types/transactionTypes";
 import MessageTypes from "../types/messageTypes";
 import EmitterEvents from "../types/emitterEvents";
+import parseAxiosError from "../services/useParseAxiosError";
 
-function WithdrawOrAdd(props: {
+function WithdrawOrAdd({
+  authUser,
+  account,
+  closeWithdrawOrAddModal,
+}: {
   authUser: any;
   account: any;
   closeWithdrawOrAddModal: Function;
@@ -34,7 +38,7 @@ function WithdrawOrAdd(props: {
     if (validator.current.allValid()) {
       if (
         transactionTypes.WITHDRAW === action &&
-        Number.parseFloat(props.account.amount) < Number.parseFloat(amount)
+        Number.parseFloat(account.amount) < Number.parseFloat(amount)
       )
         return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
           message: "Your balance is insufficient",
@@ -49,28 +53,28 @@ function WithdrawOrAdd(props: {
             conversion_rate: 1,
             // sender details
             sender_amount: Number.parseFloat(`${amount}`).toFixed(2),
-            sender_currency_id: props.account.currency.id,
-            sender_currency_symbol: props.account.currency.symbol,
+            sender_currency_id: account.currency.id,
+            sender_currency_symbol: account.currency.symbol,
             sender_account_id:
-              action === transactionTypes.DEPOSIT ? null : props.account.id,
+              action === transactionTypes.DEPOSIT ? null : account.id,
             sender_account_number:
               action === transactionTypes.DEPOSIT
                 ? bankAccountNumber
-                : props.account.id,
+                : account.id,
             sender_name: userName,
             sender_email: email,
             // recipient details
             recipient_amount: Number.parseFloat(`${amount}`).toFixed(2),
-            recipient_currency_id: props.account.currency.id,
-            recipient_currency_symbol: props.account.currency.symbol,
+            recipient_currency_id: account.currency.id,
+            recipient_currency_symbol: account.currency.symbol,
             recipient_account_id:
-              action === transactionTypes.WITHDRAW ? null : props.account.id,
+              action === transactionTypes.WITHDRAW ? null : account.id,
             recipient_account_number:
               action === transactionTypes.WITHDRAW
                 ? bankAccountNumber
-                : props.account.id,
-            recipient_name: props.authUser.user.userName,
-            recipient_email: props.authUser.user.email,
+                : account.id,
+            recipient_name: authUser.user.userName,
+            recipient_email: authUser.user.email,
           },
           {
             headers: {
@@ -87,7 +91,7 @@ function WithdrawOrAdd(props: {
                 then reflect the changes if it succeeded`,
               type: MessageTypes.info,
             });
-            props.closeWithdrawOrAddModal(true);
+            closeWithdrawOrAddModal(true);
           },
           (error) => {
             let errorBody = error.response?.data as any;
@@ -109,8 +113,27 @@ function WithdrawOrAdd(props: {
     } else validator.current.showMessages();
   }
 
+  function getIdempotencyKey() {
+    setLoading(true);
+    axiosApi.get(`/api/transaction-key`).then(
+      (response: AxiosResponse) => {
+        setIdempotencyKey(response.data.idempotency_key);
+        setLoading(false);
+      },
+      (error: AxiosError) => {
+        const message = parseAxiosError(error);
+        dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: message,
+          type: MessageTypes.error,
+        });
+        setLoading(false);
+        closeWithdrawOrAddModal();
+      }
+    );
+  }
+
   useEffect(() => {
-    setIdempotencyKey(uuidv4());
+    getIdempotencyKey();
   }, []);
 
   return (
@@ -134,16 +157,14 @@ function WithdrawOrAdd(props: {
                         className="text-xl capitalize mb-3 font-semibold leading-6 text-gray-700 mb-3"
                         id="modal-title"
                       >
-                        Direct Deposit or Withdraw from Account No.{" "}
-                        {props.account.id}
+                        Direct Deposit or Withdraw from Account No. {account.id}
                       </h1>
                       <p className="text-3xl font-semibold my-4 leading-6 text-gray-500 py-3">
                         Balance Available:
                       </p>
                       <p className="text-3xl font-semibold my-4 leading-6 text-gray-500 py-3">
                         <span className="text-green-700">
-                          {props.account.currency.symbol}{" "}
-                          {props.account.amount || 0}
+                          {account.currency.symbol} {account.amount || 0}
                         </span>
                       </p>
                       <div className="mt-2 py-3">
@@ -263,7 +284,7 @@ function WithdrawOrAdd(props: {
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                   <button
-                    onClick={() => props.closeWithdrawOrAddModal()}
+                    onClick={() => closeWithdrawOrAddModal()}
                     type="button"
                     className="inline-flex w-full mb-4 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                   >

@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
 import useValidator from "../services/useValidator";
-import Freecurrencyapi from "@everapi/freecurrencyapi-js";
 import useEventEmitter from "../services/useEventEmitter";
 import axiosApi from "../api";
-import { AxiosResponse } from "axios";
-import { v4 as uuidv4 } from "uuid";
+import { AxiosError, AxiosResponse } from "axios";
 import Spinner from "./Spinner";
 import transactionTypes from "../types/transactionTypes";
 import MessageTypes from "../types/messageTypes";
 import EmitterEvents from "../types/emitterEvents";
+import parseAxiosError from "../services/useParseAxiosError";
 
-function Transact(props: {
+function Transact({
+  authUser,
+  accountUser,
+  senderAccount,
+  receiverAccount,
+  closeTransactModal,
+}: {
   authUser: any;
   accountUser: any;
   senderAccount: any;
   receiverAccount: any;
   closeTransactModal: Function;
 }) {
-  const freecurrencyapi = new Freecurrencyapi(
-    process.env.REACT_APP_EVERAPI_KEY
-  );
   const { dispatch } = useEventEmitter();
   const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
@@ -34,29 +36,29 @@ function Transact(props: {
 
   function getExchangeRate() {
     if (validator.current.allValid()) {
-      if (
-        Number.parseFloat(props.senderAccount.amount) <
-        Number.parseFloat(amount)
-      )
+      if (Number.parseFloat(senderAccount.amount) < Number.parseFloat(amount))
         return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
           message: "Your balance is insufficient",
           type: MessageTypes.error,
         });
       setLoading(true);
-      freecurrencyapi
-        .latest({
-          base_currency: props.senderAccount.currency.code,
-          currencies: props.receiverAccount.currency.code,
+      axiosApi
+        .post(`/api/currency-conversion`, {
+          senderCurrencyCode: senderAccount.currency.code,
+          receiverCurrencyCode: receiverAccount.currency.code,
+          amount: amount,
         })
         .then(
           (response: any) => {
-            console.log(response.data);
-            const rate: number =
-              response.data[props.receiverAccount.currency.code];
-            const convertedAmont: number = Number.parseFloat(amount) * rate;
-            setConversionRate(rate);
-            setConvertedAmount(convertedAmont);
-            setRateConverted(true);
+            if (response.data.rate && response.data.convertedAmont) {
+              setConversionRate(response.data.rate);
+              setConvertedAmount(response.data.convertedAmont);
+              setRateConverted(true);
+            } else if (response.data.errorMessage)
+              dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+                message: response.data.errorMessage,
+                type: MessageTypes.error,
+              });
             setLoading(false);
           },
           (error: any) => {
@@ -80,10 +82,7 @@ function Transact(props: {
 
   function submitPayment() {
     if (validator.current.allValid()) {
-      if (
-        Number.parseFloat(props.senderAccount.amount) <
-        Number.parseFloat(amount)
-      )
+      if (Number.parseFloat(senderAccount.amount) < Number.parseFloat(amount))
         return dispatch(EmitterEvents.SHOW_NOTIFICATION, {
           message: "Your balance is insufficient",
           type: MessageTypes.error,
@@ -99,22 +98,22 @@ function Transact(props: {
             conversion_rate: conversionRate,
             // sender details
             sender_amount: amount,
-            sender_currency_id: props.senderAccount.currency.id,
-            sender_currency_symbol: props.senderAccount.currency.symbol,
-            sender_account_id: props.senderAccount.id,
-            sender_account_number: props.senderAccount.id,
-            sender_name: props.authUser.user.userName,
-            sender_email: props.authUser.user.email,
+            sender_currency_id: senderAccount.currency.id,
+            sender_currency_symbol: senderAccount.currency.symbol,
+            sender_account_id: senderAccount.id,
+            sender_account_number: senderAccount.id,
+            sender_name: authUser.user.userName,
+            sender_email: authUser.user.email,
             // recipient details
             recipient_amount: differentCurrencies
               ? Number.parseFloat(`${convertedAmount}`).toFixed(2)
               : amount,
-            recipient_currency_id: props.receiverAccount.currency.id,
-            recipient_currency_symbol: props.receiverAccount.currency.symbol,
-            recipient_account_id: props.receiverAccount.id,
-            recipient_account_number: props.receiverAccount.id,
-            recipient_name: props.accountUser.userName,
-            recipient_email: props.accountUser.email,
+            recipient_currency_id: receiverAccount.currency.id,
+            recipient_currency_symbol: receiverAccount.currency.symbol,
+            recipient_account_id: receiverAccount.id,
+            recipient_account_number: receiverAccount.id,
+            recipient_name: accountUser.userName,
+            recipient_email: accountUser.email,
           },
           {
             headers: {
@@ -130,7 +129,7 @@ function Transact(props: {
                 "Transaction was sent for processing. Please wait for notification via email or on this app when it has been successfully processed",
               type: MessageTypes.info,
             });
-            props.closeTransactModal(true);
+            closeTransactModal(true);
           },
           (error) => {
             setLoading(false);
@@ -148,13 +147,31 @@ function Transact(props: {
   function showValidator() {
     validator.current.showMessageFor("amount");
   }
-  useEffect(() => {
-    setIdempotencyKey(uuidv4());
-    setIsSameUser(
-      parseInt(props.accountUser.id) === parseInt(props.authUser.user.id)
+
+  function getIdempotencyKey() {
+    setLoading(true);
+    axiosApi.get(`/api/transaction-key`).then(
+      (response: AxiosResponse) => {
+        setIdempotencyKey(response.data.idempotency_key);
+        setLoading(false);
+      },
+      (error: AxiosError) => {
+        const message = parseAxiosError(error);
+        dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: message,
+          type: MessageTypes.error,
+        });
+        setLoading(false);
+        closeTransactModal();
+      }
     );
+  }
+
+  useEffect(() => {
+    getIdempotencyKey();
+    setIsSameUser(parseInt(accountUser.id) === parseInt(authUser.user.id));
     setDifferenctCurrencies(
-      props.senderAccount.currencyId !== props.receiverAccount.currencyId
+      senderAccount.currencyId !== receiverAccount.currencyId
     );
     return () => {};
   }, []);
@@ -189,10 +206,10 @@ function Transact(props: {
                         </p>
                         <p className="text-3xl font-semibold my-4 leading-6 text-gray-500">
                           <span className="text-green-700">
-                            {props.senderAccount.currency.symbol}{" "}
-                            {Number.parseFloat(
-                              props.senderAccount.amount
-                            ).toFixed(2) || "0.00"}
+                            {senderAccount.currency.symbol}{" "}
+                            {Number.parseFloat(senderAccount.amount).toFixed(
+                              2
+                            ) || "0.00"}
                           </span>
                         </p>
                         <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
@@ -200,7 +217,7 @@ function Transact(props: {
                         </p>
                         <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
                           <span className="text-red-700">
-                            {props.senderAccount.currency.symbol}{" "}
+                            {senderAccount.currency.symbol}{" "}
                             {Number.parseFloat(amount).toFixed(2) || "0.00"}
                           </span>
                         </p>
@@ -211,7 +228,7 @@ function Transact(props: {
                             </p>
                             <p className="text-2xl font-semibold my-4 leading-6 text-gray-500">
                               <span className="text-blue-700">
-                                {props.receiverAccount.currency.symbol}{" "}
+                                {receiverAccount.currency.symbol}{" "}
                                 {Number.parseFloat(
                                   `${convertedAmount}`
                                 ).toFixed(2) || "0.00"}
@@ -256,16 +273,16 @@ function Transact(props: {
                           Receiver Details
                         </h1>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Account Number - {props.receiverAccount.id}
+                          Account Number - {receiverAccount.id}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Email - {props.accountUser.email}
+                          Email - {accountUser.email}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          User Name - {props.accountUser.userName}
+                          User Name - {accountUser.userName}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Currency - {props.receiverAccount.currency.name}
+                          Currency - {receiverAccount.currency?.name}
                         </p>
                       </div>
                       <div className="mt-2 py-3">
@@ -276,16 +293,16 @@ function Transact(props: {
                           Sender Details
                         </h1>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Account Number - {props.senderAccount.id}
+                          Account Number - {senderAccount.id}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Email - {props.authUser.user.email}
+                          Email - {authUser.user.email}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          User Name - {props.authUser.user.userName}
+                          User Name - {authUser.user.userName}
                         </p>
                         <p className="font-semibold mb-2 leading-6 text-gray-500">
-                          Currency - {props.senderAccount.currency.name}
+                          Currency - {senderAccount.currency?.name}
                         </p>
                       </div>
                     </div>
@@ -295,7 +312,7 @@ function Transact(props: {
                   <button
                     onClick={() =>
                       !rateConverted
-                        ? props.closeTransactModal()
+                        ? closeTransactModal()
                         : resetExchangeRate()
                     }
                     type="button"

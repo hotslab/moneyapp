@@ -8,12 +8,10 @@ import {
   belongsTo,
   hasMany,
   beforeSave,
-  computed,
   afterFind,
   afterFetch,
 } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
-import { LucidRow } from '@adonisjs/lucid/types/model'
 
 export default class Account extends BaseModel {
   @column({ isPrimary: true })
@@ -61,7 +59,7 @@ export default class Account extends BaseModel {
         )
         account.amount = Math.round(
           account.amount * (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
-        )  
+        )
         console.log(
           'AFTER',
           account.amount,

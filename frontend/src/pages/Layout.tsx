@@ -8,8 +8,6 @@ import {
 } from "react-router-dom";
 import clsx from "clsx";
 import useEventEmitter from "../services/useEventEmitter";
-import axiosApi from "../api";
-import { AxiosResponse } from "axios";
 import EmitterEvents from "../types/emitterEvents";
 import IconCurrencyFill from "../components/IconCurrencyFill";
 
@@ -22,7 +20,6 @@ function Layout() {
     null
   );
   const [showMenu, setShowMenu] = useState<boolean>(false);
-  // const [isVerified, setIsVerified] = useState<boolean>(false);
   const links = [
     { name: "Profile", url: "/profile", auth: true, guest: false },
     { name: "Notifications", url: "/notifications", auth: true, guest: false },
@@ -61,21 +58,6 @@ function Layout() {
     return authUser?.user.verified;
   }
 
-  function getCurrentNotifications() {
-    axiosApi.get(`api/notifications`).then(
-      (response: AxiosResponse) => {
-        setNotifications(
-          response.data.notifications.filter(
-            (notification: any) => notification.read === false
-          )
-        );
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
-  }
-
   useEffect(() => {
     setAuthUser(
       JSON.parse(sessionStorage.getItem("authUser") as string) || null
@@ -83,7 +65,7 @@ function Layout() {
     subscribe(EmitterEvents.SET_AUTH_USER, () =>
       setAuthUser(JSON.parse(sessionStorage.getItem("authUser") as string))
     );
-    subscribe(EmitterEvents.LOAD_NOTIFICATIONS, () => getCurrentNotifications);
+    subscribe(EmitterEvents.LOG_OUT, () => logOut());
     subscribe(EmitterEvents.SET_NOTIFICATIONS, (notifications: Array<any>) =>
       setNotifications(
         notifications.filter((notification: any) => notification.read === false)
@@ -91,7 +73,7 @@ function Layout() {
     );
     return () => {
       unsubscribe(EmitterEvents.SET_AUTH_USER);
-      unsubscribe(EmitterEvents.LOAD_NOTIFICATIONS);
+      unsubscribe(EmitterEvents.LOG_OUT);
       unsubscribe(EmitterEvents.SET_NOTIFICATIONS);
     };
   }, []);
@@ -152,12 +134,14 @@ function Layout() {
                         </button>
                       ))
                   )}
-                  <button
-                    onClick={logOut}
-                    className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
-                  >
-                    Logout
-                  </button>
+                  {authUser && (
+                    <button
+                      onClick={logOut}
+                      className="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium"
+                    >
+                      Logout
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -256,12 +240,14 @@ function Layout() {
                     </button>
                   ))
               )}
-              <button
-                onClick={logOut}
-                className="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
-              >
-                Logout
-              </button>
+              {authUser && (
+                <button
+                  onClick={logOut}
+                  className="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         )}

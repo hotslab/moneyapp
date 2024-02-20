@@ -55,7 +55,7 @@ function ResetPassword() {
   }
 
   function checkPasswordMatches() {
-    if ((password || confirmPassword) && password != confirmPassword)
+    if ((password || confirmPassword) && password !== confirmPassword)
       return setPasswordDoNotMatch(true);
     else setPasswordDoNotMatch(false);
   }

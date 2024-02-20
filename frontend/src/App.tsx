@@ -1,4 +1,4 @@
-import { Location, RouterProvider, useLocation } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import router from "./router";
 import Loading from "./components/Loading";
 import MessageModal from "./components/MessageModal";
@@ -11,9 +11,7 @@ import ServerNotificationTypes from "./types/serverNotificationTypes";
 
 function App() {
   const { dispatch, subscribe, unsubscribe } = useEventEmitter();
-  // const location: Location = useLocation()
   const [socket] = useSocket();
-  const [showLoading, setShowLoading] = useState<boolean>(false);
   const [showNotification, setShowNotification] = useState<boolean>(false);
   const [notificationMessage, setNotificationMesssage] = useState<string>("");
   const [notificationType, setNotificationType] = useState<
@@ -36,7 +34,7 @@ function App() {
     type: keyof typeof MessageTypes | keyof typeof ServerNotificationTypes;
   }) {
     if (type === ServerNotificationTypes.NEW_TRANSACTION) {
-      dispatch(EmitterEvents.RELOAD_ACCOUNTS)
+      dispatch(EmitterEvents.RELOAD_ACCOUNTS);
     }
   }
 
@@ -60,7 +58,7 @@ function App() {
             setNotificationType(type);
             setNotificationMesssage(message);
             setShowNotification(true);
-            soecketEvents({message, user_id, type})
+            soecketEvents({ message, user_id, type });
           }
         }
       }
@@ -80,7 +78,6 @@ function App() {
       }
     );
     return () => {
-      // unsubscribe("show_loading");
       unsubscribe(EmitterEvents.SHOW_NOTIFICATION);
       socket.off("channel:notification");
     };
@@ -88,11 +85,7 @@ function App() {
 
   return (
     <>
-      {showLoading ? (
-        <Loading />
-      ) : (
-        <RouterProvider router={router} fallbackElement={<Loading />} />
-      )}
+      <RouterProvider router={router} fallbackElement={<Loading />} />
       {showNotification && (
         <MessageModal
           message={notificationMessage}

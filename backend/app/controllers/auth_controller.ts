@@ -5,14 +5,18 @@ import NotificationService from '#services/notification_service'
 import EmailService from '#services/email_service'
 import NotificattionTypes from '../types/notification_types.js'
 import EmailTypes from '../types/email_types.js'
+import {
+  loginValidator,
+  passwordResetLinkValidator,
+  registerValidator,
+  resetPasswordValidator,
+  verifyEmailValidator,
+} from '#validators/auth'
 
 export default class AuthController {
   async login({ request, response }: HttpContext) {
-    const user: User = await User.verifyCredentials(
-      request.input('email'),
-      request.input('password')
-    )
-    if (!user) response.status(400).send({ message: 'Invalid credentials' })
+    const payload = await request.validateUsing(loginValidator)
+    const user: User = await User.verifyCredentials(payload.email, payload.password)
     const token = await User.accessTokens.create(user)
     response.status(200).send({
       user: user,
@@ -22,9 +26,14 @@ export default class AuthController {
   }
 
   async register({ request, response }: HttpContext) {
-    const user: User = await User.create(request.only(['user_name', 'email', 'password']))
+    const payload = await request.validateUsing(registerValidator)
+    const user: User = await User.create({
+      userName: payload.user_name,
+      email: payload.email,
+      password: payload.password,
+    })
     await user.related('accounts').create({
-      currencyId: request.input('currency_id'),
+      currencyId: payload.currency_id,
     })
     const emailVerifyToken = encryption.encrypt(
       {
@@ -42,7 +51,9 @@ export default class AuthController {
   }
 
   async verifyEmail({ params, response }: HttpContext) {
-    const userData: { id: number; userName: string } | null = encryption.decrypt(params.token)
+    const data = { token: params.token }
+    const payload = await verifyEmailValidator.validate(data)
+    const userData: { id: number; userName: string } | null = encryption.decrypt(payload.token)
     if (userData) {
       const user: User = await User.findOrFail(userData.id)
       user.verified = true
@@ -77,7 +88,8 @@ export default class AuthController {
   }
 
   async passwordResetLink({ request, response }: HttpContext) {
-    const user: User | null = await User.query().where('email', request.input('email')).first()
+    const payload = await request.validateUsing(passwordResetLinkValidator)
+    const user: User | null = await User.query().where('email', payload.email).first()
     if (user) {
       const passwordResetToken = encryption.encrypt(
         {
@@ -99,11 +111,12 @@ export default class AuthController {
   }
 
   async resetPassword({ params, request, response }: HttpContext) {
-    const userData: { id: number; userName: string } | null = encryption.decrypt(params.token)
+    const data = { token: params.token, password: request.input('password') }
+    const payload = await resetPasswordValidator.validate(data)
+    const userData: { id: number; userName: string } | null = encryption.decrypt(payload.token)
     if (userData) {
       const user = await User.findOrFail(userData.id)
-      user.userName = request.input('password')
-      if (request.input('password')) user.password = request.input('password')
+      user.password = payload.password
       await user.save()
       response
         .status(200)

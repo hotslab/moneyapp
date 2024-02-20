@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import axiosApi from "../api";
 import useValidator from "../services/useValidator";
 import { AxiosError, AxiosResponse } from "axios";
 import Loading from "../components/Loading";
-import { v4 as uuidv4 } from "uuid";
 import EmitterEvents from "../types/emitterEvents";
 import MessageTypes from "../types/messageTypes";
 import useEventEmitter from "../services/useEventEmitter";
@@ -16,23 +15,14 @@ function ResetPasswordLink() {
   const [email, setEmail] = useState<string>("");
   const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
-  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
 
   function createResetPasswordLink() {
     if (validator.current.allValid()) {
       setLoading(true);
       axiosApi
-        .post(
-          "/api/password-reset-link",
-          {
-            email: email,
-          },
-          {
-            headers: {
-              idempotency_key: idempotencyKey,
-            },
-          }
-        )
+        .post("/api/password-reset-link", {
+          email: email,
+        })
         .then(
           (response: AxiosResponse) => {
             setLoading(false);
@@ -54,10 +44,6 @@ function ResetPasswordLink() {
         );
     } else validator.current.showMessages();
   }
-
-  useEffect(() => {
-    setIdempotencyKey(uuidv4());
-  }, []);
 
   return (
     <>

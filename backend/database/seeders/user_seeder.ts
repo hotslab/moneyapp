@@ -25,25 +25,25 @@ export default class UserSeeder extends BaseSeeder {
       {
         email: 'doe@test.com',
         userName: 'johnDoe',
-        password: 'test',
+        password: 'tested',
         verified: true,
       },
       {
         email: 'new@test.com',
         userName: 'janeNew',
-        password: 'test',
+        password: 'tested',
         verified: true,
       },
       {
         email: 'hotslices7@gmail.com',
         userName: 'hotslices',
-        password: 'test',
+        password: 'tested',
         verified: true,
       },
       {
         email: 'gomantrix@gmail.com',
         userName: 'gomantrix',
-        password: 'test',
+        password: 'tested',
         verified: true,
       },
     ])

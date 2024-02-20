@@ -37,12 +37,14 @@ router
 router
   .group(() => {
     router.get('resend-verify-email', [AuthController, 'resendVerifyEmail'])
+    router.resource('notifications', NotificationsController)
     router
       .group(() => {
         router.resource('users', UsersController)
         router.resource('accounts', AccountsController)
         router.resource('transactions', TransactionsController)
-        router.resource('notifications', NotificationsController)
+        router.get('transaction-key', [TransactionsController, 'getIdempotencyKey'])
+        router.post('currency-conversion', [CurrenciesController, 'currencyConversion'])
       })
       .use(middleware.userEmailVerified())
   })

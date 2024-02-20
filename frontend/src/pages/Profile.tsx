@@ -91,6 +91,18 @@ function Profile() {
       );
   }
 
+  function getCurrentNotifications() {
+    console.log("RUNNING");
+    axiosApi.get(`api/notifications`).then(
+      (response: AxiosResponse) => {
+        dispatch(EmitterEvents.SET_NOTIFICATIONS, response.data.notifications);
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+  }
+
   useEffect(() => {
     let user = JSON.parse(sessionStorage.getItem("authUser") as string);
     if (user) {
@@ -98,6 +110,8 @@ function Profile() {
       setUserName(user.user.userName);
       setAuthUser(user);
     }
+    getCurrentNotifications()
+    dispatch(EmitterEvents.LOAD_NOTIFICATIONS);
     return () => {};
   }, []);
 

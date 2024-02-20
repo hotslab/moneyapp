@@ -1,5 +1,5 @@
 import User from '#models/user'
-import type { HttpContext } from '@adonisjs/core/http'
+import { ExceptionHandler, type HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 
 export default class UserEmailVerifiedMiddleware {
@@ -8,9 +8,10 @@ export default class UserEmailVerifiedMiddleware {
      * Middleware logic goes here (before the next call)
      */
     const authUser: User | undefined = ctx.auth.user
-    // if (authUser) {}
-    console.log('MIDDLEWARE', authUser)
-
+    if (authUser && !authUser.verified) {
+      const exception = new ExceptionHandler()
+      return exception.handle('Unauthorized - email not verified', ctx)
+    }
     /**
      * Call next method in the pipeline and return its output
      */

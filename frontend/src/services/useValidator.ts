@@ -1,4 +1,4 @@
-import { useReducer, useRef, useState } from "react";
+import { useReducer, useRef } from "react";
 import SimpleReactValidator from "simple-react-validator";
 
 const useValidator = (customMessage = {}, customValidator = {}) => {

@@ -1,7 +1,6 @@
 import axios, {
   AxiosError,
   AxiosResponse,
-  AxiosStatic,
   InternalAxiosRequestConfig,
 } from "axios";
 import router from "../router";
@@ -26,7 +25,7 @@ axiosApi.interceptors.request.use(
 axiosApi.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
-    if (error.response && error.response.data) {
+    if (error.response?.data) {
       console.error("[Axios Error]", error.response);
       checkIfUnauthorised(error.response.data);
     } else {
@@ -37,27 +36,27 @@ axiosApi.interceptors.response.use(
 );
 
 function checkIfUnauthorised(errorData: any) {
-  if (errorData?.errors) {
-    const authErrors = [
-      "Authentication Error",
-      "Authentication error",
-      "Unauthorized access",
-      "jwt expired",
-      "Unauthorized",
-    ];
+  const authErrors = [
+    "Unauthorized access",
+    "Unauthorized - email not verified",
+  ];
+  if (errorData?.message && authErrors.includes(errorData.message)) {
+    return logOutUnauthorizedUser(errorData.message);
+  } else if (errorData?.errors) {
     for (const error of errorData.errors) {
       if (authErrors.includes(error.message)) {
-        sessionStorage.removeItem("authUser");
-        router.navigate("/login", {
-          state: {
-            errorMessage:
-              "You are unauthorized to view this page. Please login to access it properly",
-          },
-        });
-        return;
+        return logOutUnauthorizedUser(error.message);
       }
     }
   }
+}
+
+function logOutUnauthorizedUser(errorMessage: string) {
+  router.navigate("/login", {
+    state: {
+      errorMessage: `${errorMessage}. Please login or verify to access it properly`,
+    },
+  });
 }
 
 export default axiosApi;

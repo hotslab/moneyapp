@@ -13,6 +13,7 @@ import MessageTypes from "../types/messageTypes";
 import EmitterEvents from "../types/emitterEvents";
 import Loading from "../components/Loading";
 import IconCurrencyFill from "../components/IconCurrencyFill";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function Login() {
   const { dispatch } = useEventEmitter();
@@ -35,21 +36,12 @@ function Login() {
           setLoading(false);
           sessionStorage.setItem("authUser", JSON.stringify(response.data));
           dispatch(EmitterEvents.SET_AUTH_USER);
-          dispatch(EmitterEvents.LOAD_NOTIFICATIONS);
           navigate("/profile");
         },
         (error: AxiosError) => {
-          let errorBody = error.response?.data  as any
-          let message = ''
-          if (errorBody) {
-            if (errorBody.errors) 
-              for (const [index, err] of errorBody.errors.entries())
-                message += `${index+1}. ${err.message} `;
-            else if (errorBody.message) message = errorBody.message
-            else message = error.message
-          }
+          let message = parseAxiosError(error);
           dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-            message: message,
+            message: message || 'Unkonwn error. Please try again.',
             type: MessageTypes.error,
           });
           setLoading(false);
@@ -59,11 +51,13 @@ function Login() {
   }
 
   useEffect(() => {
-    if (location.state && location.state.errorMessage)
+    if (location.state && location.state.errorMessage) {
       dispatch(EmitterEvents.SHOW_NOTIFICATION, {
         message: location.state.errorMessage,
         type: MessageTypes.error,
       });
+      dispatch(EmitterEvents.LOG_OUT);
+    }
   }, []);
 
   return (
@@ -104,7 +98,7 @@ function Login() {
                     {validator.current.message(
                       "email",
                       email,
-                      "required|email"
+                      "required|email",
                     )}
                   </span>
                 </div>

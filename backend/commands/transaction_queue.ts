@@ -3,7 +3,6 @@ import { inject } from '@adonisjs/core'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Job, Worker } from 'bullmq'
 import Transaction from '#models/transaction'
-import { DateTime } from 'luxon'
 import Account from '#models/account'
 import EmailService from '#services/email_service'
 import NotificationService from '#services/notification_service'
@@ -41,7 +40,6 @@ export default class TransactionQueue extends BaseCommand {
               query
                 .where('idempotency_key', job.data.idempotency_key)
                 .where('transaction_type', job.data.transaction_type)
-                .where('created_at', '>', DateTime.now().minus({ hours: 24 }).toSQLDate())
               if (!isWithDrawal) query.where('recipient_account_id', job.data.recipient_account_id)
               if (!isDeposit) query.where('sender_account_id', job.data.sender_account_id)
             })
@@ -61,6 +59,7 @@ export default class TransactionQueue extends BaseCommand {
                 senderAccount
               )
             ) {
+              // create the transaction
               const transaction: Transaction = await this.createTransaction(job.data)
               if (transaction) {
                 this.updateAccountBalances(

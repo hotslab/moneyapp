@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { NavigateFunction, useNavigate } from "react-router-dom";
 import axiosApi from "../api";
 import useValidator from "../services/useValidator";
-import { AxiosResponse } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import Loading from "../components/Loading";
 import useEventEmitter from "../services/useEventEmitter";
 import EmitterEvents from "../types/emitterEvents";
 import MessageTypes from "../types/messageTypes";
 import IconCurrencyFill from "../components/IconCurrencyFill";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function Register() {
   const { dispatch } = useEventEmitter();
@@ -41,18 +42,10 @@ function Register() {
             setLoading(false);
             navigate("/login");
           },
-          (error) => {
-            let errorBody = error.response?.data as any;
-            let message = "";
-            if (errorBody) {
-              if (errorBody.errors)
-                for (const [index, err] of errorBody.errors.entries())
-                  message += `${index + 1}. ${err.message} `;
-              else if (errorBody.message) message = errorBody.message;
-              else message = error.message;
-            }
+          (error: AxiosError) => {
+            let message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: message,
+              message: message || "Unkonwn error. Please try again.",
               type: MessageTypes.error,
             });
             setLoading(false);
@@ -62,7 +55,7 @@ function Register() {
   }
 
   function checkPasswordMatches() {
-    if ((password || confirmPassword) && password != confirmPassword)
+    if ((password || confirmPassword) && password !== confirmPassword)
       return setPasswordDoNotMatch(true);
     else setPasswordDoNotMatch(false);
   }

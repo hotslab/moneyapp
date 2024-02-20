@@ -35,7 +35,7 @@ export default class Currency extends BaseModel {
   declare updatedAt: DateTime
 
   @hasMany(() => Transaction, {
-    foreignKey: 'senderCurrencyId'
+    foreignKey: 'senderCurrencyId',
   })
   declare senderTransactions: HasMany<typeof Transaction>
 }

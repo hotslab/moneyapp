@@ -5,16 +5,14 @@ import {
   column,
   belongsTo,
   beforeSave,
-  computed,
   afterFetch,
   hasOne,
   afterFind,
 } from '@adonisjs/lucid/orm'
 import type { BelongsTo, HasOne } from '@adonisjs/lucid/types/relations'
 import Currency from './currency.js'
-import { LucidRow } from '@adonisjs/lucid/types/model'
-import { hasOnlyExpressionInitializer } from 'typescript'
 import TransactionTypes from '../types/transaction_types.js'
+import logger from '@adonisjs/core/services/logger'
 
 export default class Transaction extends BaseModel {
   @column({ isPrimary: true })
@@ -95,45 +93,63 @@ export default class Transaction extends BaseModel {
   static async saveAmountsAsInteger(transaction: Transaction) {
     try {
       if (transaction.$dirty.senderAmount) {
+        console.log('transaction sender beforeSave INVOKED', transaction.senderAmount)
         const senderCurrency = await Currency.find(transaction.senderCurrencyId)
-        if (senderCurrency)
+        if (senderCurrency) {
+          console.log(
+            'sender BEFORE',
+            transaction.senderAmount,
+            senderCurrency.decimalDigits,
+            senderCurrency.decimalDigits <= 0,
+            Math.pow(10, senderCurrency.decimalDigits)
+          )
           transaction.senderAmount = Math.round(
             transaction.senderAmount *
               (senderCurrency.decimalDigits <= 0 ? 1 : Math.pow(10, senderCurrency.decimalDigits))
           )
+          console.log(
+            'sender AFTER',
+            transaction.senderAmount,
+            senderCurrency.decimalDigits,
+            senderCurrency.decimalDigits <= 0,
+            Math.pow(10, senderCurrency.decimalDigits)
+          )
+        }
       }
       if (transaction.$dirty.recipientAmount) {
+        console.log('transaction recipient beforeSave INVOKED', transaction.recipientAmount)
         const recipientCurrency = await Currency.find(transaction.recipientCurrencyId)
-        if (recipientCurrency)
+        if (recipientCurrency) {
+          console.log(
+            'receiver BEFORE',
+            transaction.recipientAmount,
+            recipientCurrency.decimalDigits,
+            recipientCurrency.decimalDigits <= 0,
+            Math.pow(10, recipientCurrency.decimalDigits)
+          )
           transaction.recipientAmount = Math.round(
             transaction.recipientAmount *
               (recipientCurrency.decimalDigits <= 0
                 ? 1
                 : Math.pow(10, recipientCurrency.decimalDigits))
           )
+          console.log(
+            'receiver AFTER',
+            transaction.recipientAmount,
+            recipientCurrency.decimalDigits,
+            recipientCurrency.decimalDigits <= 0,
+            Math.pow(10, recipientCurrency.decimalDigits)
+          )
+        }
       }
     } catch (error) {
-      console.log('SAVE TRANSACTION AMOUNT ERROR', error)
+      logger.error({ error: error }, 'SAVE TRANSACTION AMOUNT ERROR')
     }
   }
 
   @afterFind()
   static async getSingleTransaction(transaction: Transaction) {
-    const senderCurrency = await Currency.find(transaction.senderCurrencyId)
-    const receiverCurrency = await Currency.find(transaction.recipientCurrencyId)
-    if (senderCurrency) {
-      const balance = transaction.senderAmount / Math.pow(10, senderCurrency.decimalDigits)
-      transaction.senderAmount = Number.parseFloat(`${balance}`)
-    }
-    if (receiverCurrency) {
-      const balance = transaction.recipientAmount / Math.pow(10, receiverCurrency.decimalDigits)
-      transaction.recipientAmount = Number.parseFloat(`${balance}`)
-    }
-  }
-
-  @afterFetch()
-  static async getMultipleTransactions(transactions: Transaction[]) {
-    for (const transaction of transactions) {
+    try {
       const senderCurrency = await Currency.find(transaction.senderCurrencyId)
       const receiverCurrency = await Currency.find(transaction.recipientCurrencyId)
       if (senderCurrency) {
@@ -144,6 +160,28 @@ export default class Transaction extends BaseModel {
         const balance = transaction.recipientAmount / Math.pow(10, receiverCurrency.decimalDigits)
         transaction.recipientAmount = Number.parseFloat(`${balance}`)
       }
+    } catch (error) {
+      logger.error({ error: error }, `FAILED PARSING AMOUNT TO FLOAT VALUE FOR SINGLE RECORD`)
+    }
+  }
+
+  @afterFetch()
+  static async getMultipleTransactions(transactions: Transaction[]) {
+    try {
+      for (const transaction of transactions) {
+        const senderCurrency = await Currency.find(transaction.senderCurrencyId)
+        const receiverCurrency = await Currency.find(transaction.recipientCurrencyId)
+        if (senderCurrency) {
+          const balance = transaction.senderAmount / Math.pow(10, senderCurrency.decimalDigits)
+          transaction.senderAmount = Number.parseFloat(`${balance}`)
+        }
+        if (receiverCurrency) {
+          const balance = transaction.recipientAmount / Math.pow(10, receiverCurrency.decimalDigits)
+          transaction.recipientAmount = Number.parseFloat(`${balance}`)
+        }
+      }
+    } catch (error) {
+      logger.error({ error: error }, `FAILED PARSING AMOUNT TO FLOAT VALUE FOR MULTIPLE RECORDS`)
     }
   }
 }
