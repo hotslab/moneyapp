@@ -7,6 +7,7 @@ import {
   storeTransactionExtraFieldsValidator,
   storeTransactionValidator,
 } from '#validators/transaction'
+import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -30,7 +31,8 @@ export default class TransactionsController {
   /**
    * Handle form submission for the create action
    */
-  async store({ auth, request, response }: HttpContext) {
+  @inject()
+  async store({ auth, request, response }: HttpContext, transactionService: TransactionService) {
     // first validation
     const data = {
       idempotency_key: request.header('idempotency_key') as string,
@@ -51,7 +53,6 @@ export default class TransactionsController {
     const extraFieldsPayload = await storeTransactionExtraFieldsValidator.validate(extraFieldsData)
 
     // create transaction
-    const transactionService = new TransactionService()
     await transactionService.queue({
       idempotency_key: payload.idempotency_key,
       transaction_type: payload.transaction_type,
@@ -74,29 +75,6 @@ export default class TransactionsController {
       recipient_email: payload.recipient_email,
       auth_user_id: extraFieldsPayload.auth_user_id,
       receiver_user_id: extraFieldsPayload.receiver_user_id,
-      // idempotency_key: request.header('idempotency_key') as string,
-      // transaction_type: request.input('transaction_type') as string,
-      // conversion_rate: Number.parseFloat(request.input('conversion_rate') as string),
-      // // sender details
-      // sender_amount: Number.parseFloat(request.input('sender_amount') as string),
-      // sender_currency_id: Number.parseInt(request.input('sender_currency_id') as string),
-      // sender_currency_symbol: request.input('sender_currency_symbol') as string,
-      // sender_account_id: Number.parseInt(request.input('sender_account_id') as string),
-      // sender_account_number: Number.parseInt(request.input('sender_account_number') as string),
-      // sender_name: request.input('sender_name') as string,
-      // sender_email: request.input('sender_email') as string,
-      // // recipient details
-      // recipient_amount: Number.parseFloat(request.input('recipient_amount') as string),
-      // recipient_currency_id: Number.parseInt(request.input('recipient_currency_id') as string),
-      // recipient_currency_symbol: request.input('recipient_currency_symbol') as string,
-      // recipient_account_id: Number.parseInt(request.input('recipient_account_id') as string),
-      // recipient_account_number: Number.parseInt(
-      //   request.input('recipient_account_number') as string
-      // ),
-      // recipient_name: request.input('recipient_name') as string,
-      // recipient_email: request.input('recipient_email') as string,
-      // auth_user_id: authUser.id,
-      // receiver_user_id: receiverAccount ? receiverAccount.userId : null,
     })
     response.status(200).send({ message: 'Transaction sent for processing.' })
   }

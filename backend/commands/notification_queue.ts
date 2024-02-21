@@ -1,9 +1,9 @@
 import { BaseCommand } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Job, Worker } from 'bullmq'
-import Notification from '#models/notification'
-import redis from '#services/redis_service'
 import NotificationTypes from '../app/types/notification_types.js'
+import { inject } from '@adonisjs/core'
+import NotificationService from '#services/notification_service'
 
 export default class NotificationQueue extends BaseCommand {
   static commandName = 'notification:queue'
@@ -15,7 +15,8 @@ export default class NotificationQueue extends BaseCommand {
     staysAlive: true,
   }
 
-  async run() {
+  @inject()
+  async run(notificationService: NotificationService) {
     const notificationWorker: Worker = new Worker(
       'notifications',
       async (job: Job) => {
@@ -25,29 +26,10 @@ export default class NotificationQueue extends BaseCommand {
         this.logger.info(
           `NOTIFICATION: New ${job.id}-${job.name} started => ${JSON.stringify(job.data)}`
         )
-
-        if (
-          NotificationTypes.EMAIL_VERIFIED === job.name ||
-          NotificationTypes.NEW_TRANSACTION === job.name ||
-          NotificationTypes.INSUFFICENT_BALANCE === job.name ||
-          NotificationTypes.TRANSACTION_ALREADY_COMPLETED === job.name ||
-          NotificationTypes.TRANSACTION_FAILED === job.name
-        ) {
-          this.logger.info(
-            `Notification: Saving Notification for job ${job.id}-${job.name} => ${JSON.stringify(job.data)}`
-          )
-          const notification: Notification = await Notification.create({
-            userId: job.data.user_id,
-            message: job.data.message,
-            type: job.name,
-            read: false,
-          })
-          if (notification && job.data.sendSocketNotification)
-            await redis.publish('notification', JSON.stringify(job.data))
-          this.logger.info(
-            `Notification: Socket notification sent for job ${job.id}-${job.name} => ${JSON.stringify(job.data)}`
-          )
-        }
+        this.logger.info(
+          `Notification: Savid Notification for job ${job.id}-${job.name} => ${JSON.stringify(job.data)}`
+        )
+        notificationService.createNotification(job.name as keyof typeof NotificationTypes, job.data)
       },
       {
         connection: {

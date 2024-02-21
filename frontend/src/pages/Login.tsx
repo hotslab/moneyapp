@@ -20,7 +20,7 @@ function Login() {
   const navigate: NavigateFunction = useNavigate();
   let location: Location = useLocation();
   const [email, setEmail] = useState<string>("hotslices7@gmail.com");
-  const [password, setPassword] = useState<string>("test");
+  const [password, setPassword] = useState<string>("tested");
   const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
 

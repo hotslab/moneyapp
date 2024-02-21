@@ -1,11 +1,10 @@
 import { BaseCommand } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Job, Worker } from 'bullmq'
-import mail from '@adonisjs/mail/services/main'
 import { inject } from '@adonisjs/core'
 import EmailTypes from '../app/types/email_types.js'
 import NotificationService from '#services/notification_service'
-import NotificationTypes from '../app/types/notification_types.js'
+import EmailService from '#services/email_service'
 
 export default class EmailQueue extends BaseCommand {
   static commandName = 'email:queue'
@@ -17,7 +16,7 @@ export default class EmailQueue extends BaseCommand {
   }
 
   @inject()
-  async run(notificationService: NotificationService) {
+  async run(emailService: EmailService, notificationService: NotificationService) {
     const emailWorker: Worker = new Worker(
       'emails',
       async (job) => {
@@ -28,23 +27,14 @@ export default class EmailQueue extends BaseCommand {
           `EMAIL: New job ${job.id}-${job.name} started => ${JSON.stringify(job.data)}`
         )
 
-        // sending email
-        const { mailMessage, config, mailerName } = job.data
-        await mail.use(mailerName).sendCompiled(mailMessage, config)
+        await emailService.sendMail(job.data)
 
-        // creating notification records
-        if (EmailTypes.VERIFY_EMAIL === job.name || EmailTypes.PASSWORD_RESET_EMAIL === job.name) {
-          let message = ''
-          if (EmailTypes.VERIFY_EMAIL === job.name)
-            message = `A new email verification link was send to your email address at ${mailMessage.message.to}`
-          if (EmailTypes.PASSWORD_RESET_EMAIL === job.name)
-            message = `A new password reset link was sent to your email address at ${mailMessage.message.to}`
-          notificationService.queue({
-            type: NotificationTypes.INSUFFICENT_BALANCE,
-            user_id: job.data.usr_id,
-            message: message,
-          })
-        }
+        await emailService.createNotifications(
+          job.name as keyof typeof EmailTypes,
+          job.data.user_id,
+          job.data.mailMessage,
+          notificationService
+        )
       },
       {
         connection: {

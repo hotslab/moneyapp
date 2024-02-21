@@ -4,6 +4,9 @@ import VerifyEmailNotification from '#mails/verify_email_notification'
 import TransactionEmailNotification from '#mails/transaction_mail_notification'
 import EmailTypes from '../types/email_types.js'
 import PasswordResetNotification from '#mails/password_reset_notification'
+import { MessageBodyTemplates, NodeMailerMessage } from '@adonisjs/mail/types'
+import NotificationService from './notification_service.js'
+import NotificationTypes from '../types/notification_types.js'
 
 export default class EmailService {
   async queue({ type, emailData }: { type: keyof typeof EmailTypes; emailData: any }) {
@@ -57,6 +60,41 @@ export default class EmailService {
         )
     } catch (error) {
       console.log('EMAIL SERVICE ERROR', error)
+    }
+  }
+
+  async sendMail(emailData: {
+    mailMessage: {
+      message: NodeMailerMessage
+      views: MessageBodyTemplates
+    }
+    config: unknown
+    mailerName: any
+  }) {
+    const { mailMessage, config, mailerName } = emailData
+    await mail.use(mailerName).sendCompiled(mailMessage, config)
+  }
+
+  async createNotifications(
+    eventName: keyof typeof EmailTypes,
+    userId: number,
+    mailMessage: {
+      message: NodeMailerMessage
+      views: MessageBodyTemplates
+    },
+    notificationService: NotificationService
+  ) {
+    if (EmailTypes.VERIFY_EMAIL === eventName || EmailTypes.PASSWORD_RESET_EMAIL === eventName) {
+      let message = ''
+      if (EmailTypes.VERIFY_EMAIL === eventName)
+        message = `A new email verification link was send to your email address at ${mailMessage.message.to}`
+      if (EmailTypes.PASSWORD_RESET_EMAIL === eventName)
+        message = `A new password reset link was sent to your email address at ${mailMessage.message.to}`
+      notificationService.queue({
+        type: NotificationTypes.INSUFFICENT_BALANCE,
+        user_id: userId,
+        message: message,
+      })
     }
   }
 }

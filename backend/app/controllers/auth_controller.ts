@@ -12,6 +12,7 @@ import {
   resetPasswordValidator,
   verifyEmailValidator,
 } from '#validators/auth'
+import { inject } from '@adonisjs/core'
 
 export default class AuthController {
   async login({ request, response }: HttpContext) {
@@ -25,7 +26,8 @@ export default class AuthController {
     })
   }
 
-  async register({ request, response }: HttpContext) {
+  @inject()
+  async register({ request, response }: HttpContext, emailService: EmailService) {
     const payload = await request.validateUsing(registerValidator)
     const user: User = await User.create({
       userName: payload.user_name,
@@ -42,7 +44,6 @@ export default class AuthController {
       },
       '1 day'
     )
-    const emailService = new EmailService()
     emailService.queue({
       type: EmailTypes.VERIFY_EMAIL,
       emailData: { user: user, emailVerifyToken: emailVerifyToken },
@@ -50,7 +51,8 @@ export default class AuthController {
     response.status(200).send({ message: `${user.userName} created successfully` })
   }
 
-  async verifyEmail({ params, response }: HttpContext) {
+  @inject()
+  async verifyEmail({ params, response }: HttpContext, notificationService: NotificationService) {
     const data = { token: params.token }
     const payload = await verifyEmailValidator.validate(data)
     const userData: { id: number; userName: string } | null = encryption.decrypt(payload.token)
@@ -58,7 +60,6 @@ export default class AuthController {
       const user: User = await User.findOrFail(userData.id)
       user.verified = true
       await user.save()
-      const notificationService: NotificationService = new NotificationService()
       notificationService.queue({
         type: NotificattionTypes.EMAIL_VERIFIED,
         user_id: user.id,
@@ -68,7 +69,8 @@ export default class AuthController {
     } else response.status(400).send({ message: `Failed to verify email. Please try again` })
   }
 
-  async resendVerifyEmail({ auth, response }: HttpContext) {
+  @inject()
+  async resendVerifyEmail({ auth, response }: HttpContext, emailService: EmailService) {
     const authUser: User = auth.getUserOrFail()
     const emailVerifyToken = encryption.encrypt(
       {
@@ -77,7 +79,6 @@ export default class AuthController {
       },
       '1 day'
     )
-    const emailService = new EmailService()
     emailService.queue({
       type: EmailTypes.VERIFY_EMAIL,
       emailData: { user: authUser, emailVerifyToken: emailVerifyToken },
@@ -87,7 +88,8 @@ export default class AuthController {
       .send({ message: `Verify email resent. Please chek your email at ${authUser.email}` })
   }
 
-  async passwordResetLink({ request, response }: HttpContext) {
+  @inject()
+  async passwordResetLink({ request, response }: HttpContext, emailService: EmailService) {
     const payload = await request.validateUsing(passwordResetLinkValidator)
     const user: User | null = await User.query().where('email', payload.email).first()
     if (user) {
@@ -98,7 +100,6 @@ export default class AuthController {
         },
         '1 day'
       )
-      const emailService = new EmailService()
       emailService.queue({
         type: EmailTypes.PASSWORD_RESET_EMAIL,
         emailData: { user: user, passwordResetToken: passwordResetToken },

@@ -68,27 +68,25 @@ function Profile() {
   }
 
   function verifyEmail() {
-    setLoading(true)
-    axiosApi
-      .get(`/api/resend-verify-email`)
-      .then(
-        (response: AxiosResponse) => {
-          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-            message: response.data.message,
-            type: MessageTypes.info,
-          });
-          setLoading(false);
-        },
-        (error: AxiosError) => {
-          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-            message: error.response?.data
-              ? (error.response.data as any).message
-              : error.message,
-            type: MessageTypes.error,
-          });
-          setLoading(false);
-        }
-      );
+    setLoading(true);
+    axiosApi.get(`/api/resend-verify-email`).then(
+      (response: AxiosResponse) => {
+        dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: response.data.message,
+          type: MessageTypes.info,
+        });
+        setLoading(false);
+      },
+      (error: AxiosError) => {
+        dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: error.response?.data
+            ? (error.response.data as any).message
+            : error.message,
+          type: MessageTypes.error,
+        });
+        setLoading(false);
+      }
+    );
   }
 
   function getCurrentNotifications() {
@@ -103,6 +101,10 @@ function Profile() {
     );
   }
 
+  function deleteProfile() {
+    //
+  }
+
   useEffect(() => {
     let user = JSON.parse(sessionStorage.getItem("authUser") as string);
     if (user) {
@@ -110,7 +112,7 @@ function Profile() {
       setUserName(user.user.userName);
       setAuthUser(user);
     }
-    getCurrentNotifications()
+    getCurrentNotifications();
     dispatch(EmitterEvents.LOAD_NOTIFICATIONS);
     return () => {};
   }, []);
@@ -235,11 +237,16 @@ function Profile() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="w-full sm:flex sm:justify-between sm:items-center">
+                    <button
+                      onClick={deleteProfile}
+                      className="flex w-full mb-3 sm:w-2/6 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                    >
+                      Delete Profile
+                    </button>
                     <button
                       onClick={updateDetails}
-                      type="submit"
-                      className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      className="flex w-full mb-3 sm:w-2/6 justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
                       Update Details
                     </button>
