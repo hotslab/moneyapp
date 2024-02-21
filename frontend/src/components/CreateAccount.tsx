@@ -17,7 +17,7 @@ function CreateAccount({
   const { dispatch } = useEventEmitter();
   const [validator] = useValidator();
   const [currencies, setCurrencies] = useState<Array<any>>([]);
-  const [selectedCurrencyId, setSelectedCurrency] = useState<string>("");
+  const [selectedCurrencyId, setSelectedCurrency] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
   function getCurrencies() {
@@ -25,6 +25,11 @@ function CreateAccount({
     axiosApi.get(`api/currencies`).then(
       (response: AxiosResponse) => {
         setCurrencies(response.data.currencies);
+        setSelectedCurrency(
+          response.data.currencies.length > 0
+            ? response.data.currencies[0].id
+            : ""
+        );
         setLoading(false);
       },
       (error) => {
@@ -54,8 +59,8 @@ function CreateAccount({
         (error) => {
           dispatch(EmitterEvents.SHOW_NOTIFICATION, {
             message: error.response?.data
-            ? (error.response.data as any).message
-            : error.message,
+              ? (error.response.data as any).message
+              : error.message,
             type: MessageTypes.error,
           });
           setLoading(true);

@@ -7,18 +7,21 @@ import useEventEmitter from "../services/useEventEmitter";
 import EmitterEvents from "../types/emitterEvents";
 import Loading from "../components/Loading";
 import MessageTypes from "../types/messageTypes";
+import ConfirmModal from "../components/ConfirmModal";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function Profile() {
   const { dispatch } = useEventEmitter();
   const navigate: NavigateFunction = useNavigate();
+  const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [email, setEmail] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [passwordDoNotMatch, setPasswordDoNotMatch] = useState<boolean>(false);
-  const [validator] = useValidator();
 
   function updateDetails() {
     if (validator.current.allValid() && !passwordDoNotMatch) {
@@ -78,31 +81,56 @@ function Profile() {
         setLoading(false);
       },
       (error: AxiosError) => {
+        let message = parseAxiosError(error);
         dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-          message: error.response?.data
-            ? (error.response.data as any).message
-            : error.message,
+          message: message || "Unkonwn error. Please try again.",
           type: MessageTypes.error,
         });
+        setLoading(false);
         setLoading(false);
       }
     );
   }
 
   function getCurrentNotifications() {
-    console.log("RUNNING");
     axiosApi.get(`api/notifications`).then(
       (response: AxiosResponse) => {
         dispatch(EmitterEvents.SET_NOTIFICATIONS, response.data.notifications);
       },
       (error) => {
-        console.log(error);
+        let message = parseAxiosError(error);
+        dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+          message: message || "Unkonwn error. Please try again.",
+          type: MessageTypes.error,
+        });
       }
     );
   }
 
-  function deleteProfile() {
-    //
+  async function deleteProfile(deleteProfile: boolean) {
+    if (deleteProfile) {
+      setLoading(true);
+      axiosApi.delete(`api/users/${authUser.user.id}`).then(
+        (response: AxiosResponse) => {
+          setShowConfirmModal(false);
+          setLoading(false);
+          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+            message: response.data.message,
+            type: MessageTypes.info,
+          });
+          dispatch(EmitterEvents.LOG_OUT);
+        },
+        (error) => {
+          let message = parseAxiosError(error);
+          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+            message: message || "Unkonwn error. Please try again.",
+            type: MessageTypes.error,
+          });
+          setShowConfirmModal(false);
+          setLoading(false);
+        }
+      );
+    } else setShowConfirmModal(false);
   }
 
   useEffect(() => {
@@ -239,7 +267,7 @@ function Profile() {
 
                   <div className="w-full sm:flex sm:justify-between sm:items-center">
                     <button
-                      onClick={deleteProfile}
+                      onClick={() => setShowConfirmModal(true)}
                       className="flex w-full mb-3 sm:w-2/6 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                     >
                       Delete Profile
@@ -256,6 +284,9 @@ function Profile() {
             </div>
           </main>
         </div>
+      )}
+      {showConfirmModal && (
+        <ConfirmModal closeConfirmModal={(e: boolean) => deleteProfile(e)} />
       )}
     </>
   );

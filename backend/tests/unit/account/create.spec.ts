@@ -3,7 +3,6 @@ import Account from '#models/account'
 import Currency from '#models/currency'
 import User from '#models/user'
 import { faker } from '@faker-js/faker'
-// import testUtils from '@adonisjs/core/services/test_utils'
 import { test } from '@japa/runner'
 
 test.group('Account create', (group) => {

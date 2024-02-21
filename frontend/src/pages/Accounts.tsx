@@ -9,11 +9,16 @@ import CreateAccount from "../components/CreateAccount";
 import SelectAccounts from "../components/SelectAccounts";
 import EmitterEvents from "../types/emitterEvents";
 import Loading from "../components/Loading";
+import ConfirmModal from "../components/ConfirmModal";
+import MessageTypes from "../types/messageTypes";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function Accounts() {
   const { subscribe, unsubscribe } = useEventEmitter();
   const navigate: NavigateFunction = useNavigate();
   const { userId } = useParams();
+  const { dispatch } = useEventEmitter();
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<any>(null);
   const [accountUser, setAccountUser] = useState<any>(null);
@@ -92,7 +97,7 @@ function Accounts() {
 
   function getAccounts(authUser: any) {
     setLoading(true);
-    axiosApi.get(`api/accounts?user_id=${userId}`).then(
+    axiosApi.get(`api/accounts`).then(
       (response: AxiosResponse) => {
         setAccountUser(response.data.user);
         setAccounts(response.data.accounts);
@@ -107,6 +112,42 @@ function Accounts() {
         setLoading(false);
       }
     );
+  }
+
+  function openConfirmModal(selectedAccount: any) {
+    setSenderAccount(selectedAccount)
+    setShowConfirmModal(true)
+  }
+
+  async function deleteAccount(deleteAccount: boolean) {
+    if (deleteAccount) {
+      setLoading(true);
+      axiosApi.delete(`api/accounts/${senderAccount.id}`).then(
+        (response: AxiosResponse) => {
+          setSenderAccount(null);
+          setShowConfirmModal(false);
+          setLoading(false);
+          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+            message: response.data.message,
+            type: MessageTypes.info,
+          });
+          getAccounts(authUser)
+        },
+        (error) => {
+          let message = parseAxiosError(error);
+          dispatch(EmitterEvents.SHOW_NOTIFICATION, {
+            message: message || "Unkonwn error. Please try again.",
+            type: MessageTypes.error,
+          });
+          setSenderAccount(null);
+          setShowConfirmModal(false);
+          setLoading(false);
+        }
+      );
+    } else {
+      setSenderAccount(null);
+      setShowConfirmModal(false);
+    }
   }
 
   useEffect(() => {
@@ -191,6 +232,11 @@ function Accounts() {
                       {isAuthUser() && (
                         <th scope="col" className="px-6 py-3">
                           History
+                        </th>
+                      )}
+                      {isAuthUser() && (
+                        <th scope="col" className="px-6 py-3">
+                          Delete
                         </th>
                       )}
                     </tr>
@@ -293,6 +339,20 @@ function Accounts() {
                             </button>
                           </th>
                         )}
+                        {isAuthUser() && (
+                          <th
+                            scope="row"
+                            className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
+                          >
+                            <button
+                              title="View this acount's transaction history"
+                              onClick={() => openConfirmModal(account)}
+                              className="font-medium text-red-600 hover:underline mr-2"
+                            >
+                              Delete
+                            </button>
+                          </th>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -341,6 +401,11 @@ function Accounts() {
               closeSelectAccountsModal={(e: boolean) =>
                 closeSelectAccountsModal(e)
               }
+            />
+          )}
+          {showConfirmModal && (
+            <ConfirmModal
+              closeConfirmModal={(e: boolean) => deleteAccount(e)}
             />
           )}
         </div>

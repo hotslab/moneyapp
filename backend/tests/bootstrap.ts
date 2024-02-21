@@ -5,8 +5,9 @@ import type { Config } from '@japa/runner/types'
 import { pluginAdonisJS } from '@japa/plugin-adonisjs'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { expectTypeOf } from '@japa/expect-type'
-import { exec } from 'node:child_process'
+import { authApiClient } from '@adonisjs/auth/plugins/api_client'
 
+console.log('APP',  app)
 /**
  * This file is imported by the "bin/test.ts" entrypoint file
  */
@@ -20,6 +21,7 @@ export const plugins: Config['plugins'] = [
   apiClient(),
   pluginAdonisJS(app),
   expectTypeOf(),
+  authApiClient(app),
 ]
 
 /**

@@ -6,6 +6,7 @@ import NotificationTypes from '../types/notification_types.js'
 import EmailTypes from '../types/email_types.js'
 import logger from '@adonisjs/core/services/logger'
 import Account from '#models/account'
+import { inject } from '@adonisjs/core'
 
 export default class TransactionService {
   async queue(transactionData: {
@@ -116,6 +117,7 @@ export default class TransactionService {
     return transaction
   }
 
+  @inject()
   async sendSuccessNotifications(
     jobId: string | undefined,
     jobName: string,
@@ -186,6 +188,7 @@ export default class TransactionService {
     )
   }
 
+  @inject()
   async duplicateTransactionNotification(
     exists: Transaction,
     jobDataAuthUserId: number,
@@ -218,6 +221,7 @@ export default class TransactionService {
     })
   }
 
+  @inject()
   async jobFailed(job: any, emailService: EmailService, notificationService: NotificationService) {
     const message: string = `
       Your transaction for the amount of 

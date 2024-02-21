@@ -12,9 +12,6 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { v4 as uuidv4 } from 'uuid'
 
 export default class TransactionsController {
-  /**
-   * Display a list of resource
-   */
   async index({ request, response }: HttpContext) {
     const payload = await request.validateUsing(indexTransactionValidator)
     const transactions: Array<Transaction> = await Transaction.query()
@@ -23,14 +20,6 @@ export default class TransactionsController {
     response.status(200).send({ transactions: transactions })
   }
 
-  /**
-   * Display form to create a new record
-   */
-  async create({}: HttpContext) {}
-
-  /**
-   * Handle form submission for the create action
-   */
   @inject()
   async store({ auth, request, response }: HttpContext, transactionService: TransactionService) {
     // first validation
@@ -79,27 +68,7 @@ export default class TransactionsController {
     response.status(200).send({ message: 'Transaction sent for processing.' })
   }
 
-  /**
-   * Show individual record
-   */
-  async show({ params }: HttpContext) {}
-
-  /**
-   * Edit individual record
-   */
-  async edit({ params }: HttpContext) {}
-
-  /**
-   * Handle form submission for the edit action
-   */
-  async update({ params, request }: HttpContext) {}
-
-  /**
-   * Delete record
-   */
-  async destroy({ params }: HttpContext) {}
-
-  async getIdempotencyKey({ response }: HttpContext) {
+  async getUniqueIdempotencyKey({ response }: HttpContext) {
     let newUuid = null
     for (let index = 0; index < 5; index++) {
       const uuid = uuidv4()
@@ -109,7 +78,11 @@ export default class TransactionsController {
         break
       }
     }
-    if (newUuid) response.status(200).send({ idempotency_key: newUuid })
+    if (newUuid)
+      response.status(200).send({
+        message: 'Transaction initialization started successfully',
+        idempotency_key: newUuid,
+      })
     else
       response
         .status(400)

@@ -64,6 +64,11 @@ function Register() {
     axiosApi.get("api/currencies").then(
       (response) => {
         setCurrencies(response.data.currencies);
+        setCurrencyId(
+          response.data.currencies.length > 0
+            ? response.data.currencies[0].id
+            : ""
+        );
       },
       (error) => {
         console.log(error);

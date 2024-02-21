@@ -43,7 +43,7 @@ router
         router.resource('users', UsersController)
         router.resource('accounts', AccountsController)
         router.resource('transactions', TransactionsController)
-        router.get('transaction-key', [TransactionsController, 'getIdempotencyKey'])
+        router.get('transaction-key', [TransactionsController, 'getUniqueIdempotencyKey'])
         router.post('currency-conversion', [CurrenciesController, 'currencyConversion'])
       })
       .use(middleware.userEmailVerified())
