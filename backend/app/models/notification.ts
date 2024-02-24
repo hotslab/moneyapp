@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import NotificationTypes from '../types/notification_types.js'
+import EmailTypes from '../types/email_types.js'
 
 export default class Notification extends BaseModel {
   @column({ isPrimary: true })
@@ -15,7 +16,7 @@ export default class Notification extends BaseModel {
   declare message: string
 
   @column()
-  declare type: keyof typeof NotificationTypes
+  declare type: keyof typeof NotificationTypes | keyof typeof EmailTypes
 
   @column()
   declare read: boolean

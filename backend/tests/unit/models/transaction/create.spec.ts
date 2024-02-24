@@ -5,7 +5,7 @@ import Transaction from '#models/transaction'
 import User from '#models/user'
 import { faker } from '@faker-js/faker'
 import { test } from '@japa/runner'
-import TransactionTypes from '../../../app/types/transaction_types.js'
+import TransactionTypes from '../../../../app/types/transaction_types.js'
 import { v4 as uuidv4 } from 'uuid'
 
 test.group('Transaction create', (group) => {

@@ -1,4 +1,3 @@
-import { Queue } from 'bullmq'
 import mail from '@adonisjs/mail/services/main'
 import VerifyEmailNotification from '#mails/verify_email_notification'
 import TransactionEmailNotification from '#mails/transaction_mail_notification'
@@ -6,17 +5,20 @@ import EmailTypes from '../types/email_types.js'
 import PasswordResetNotification from '#mails/password_reset_notification'
 import { MessageBodyTemplates, NodeMailerMessage } from '@adonisjs/mail/types'
 import NotificationService from './notification_service.js'
-import NotificationTypes from '../types/notification_types.js'
+import { inject } from '@adonisjs/core'
+import QueueService from './queue_service.js'
+import QueueTypes from '../types/queue_types.js'
 
+@inject()
 export default class EmailService {
+  constructor(
+    protected queueService: QueueService,
+    protected notificationService: NotificationService
+  ) {}
+
   async queue({ type, emailData }: { type: keyof typeof EmailTypes; emailData: any }) {
     try {
-      const emailsQueue = new Queue('emails', {
-        connection: {
-          host: 'moneyapp_redis',
-          port: 6379,
-        },
-      })
+      const emailsQueue = this.queueService.start(QueueTypes.emails)
       mail.setMessenger((mailer) => {
         return {
           async queue(mailMessage, config) {
@@ -81,8 +83,7 @@ export default class EmailService {
     mailMessage: {
       message: NodeMailerMessage
       views: MessageBodyTemplates
-    },
-    notificationService: NotificationService
+    }
   ) {
     if (EmailTypes.VERIFY_EMAIL === eventName || EmailTypes.PASSWORD_RESET_EMAIL === eventName) {
       let message = ''
@@ -90,8 +91,8 @@ export default class EmailService {
         message = `A new email verification link was send to your email address at ${mailMessage.message.to}`
       if (EmailTypes.PASSWORD_RESET_EMAIL === eventName)
         message = `A new password reset link was sent to your email address at ${mailMessage.message.to}`
-      notificationService.queue({
-        type: NotificationTypes.INSUFFICENT_BALANCE,
+      await this.notificationService.queue({
+        type: eventName as keyof typeof EmailTypes,
         user_id: userId,
         message: message,
       })

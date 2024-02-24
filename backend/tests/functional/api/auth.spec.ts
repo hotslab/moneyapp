@@ -5,11 +5,39 @@ import Transaction from '#models/transaction'
 import User from '#models/user'
 import EmailService from '#services/email_service'
 import NotificationService from '#services/notification_service'
+import QueueService from '#services/queue_service'
+import NodeRedis from '#services/redis_service'
 import app from '@adonisjs/core/services/app'
 import encryption from '@adonisjs/core/services/encryption'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { faker } from '@faker-js/faker'
 import { test } from '@japa/runner'
+
+class FakeQueueService extends QueueService {
+  start: any = () => {
+    return {
+      add() {},
+    }
+  }
+}
+class FakeNodeRedis extends NodeRedis {
+  async io(): Promise<any> {
+    return {
+      subscribe: () => {},
+      publish: () => {},
+    }
+  }
+}
+class FakeNotificationService extends NotificationService {
+  async queue() {
+    return
+  }
+}
+class FakeEmailService extends EmailService {
+  async queue() {
+    return
+  }
+}
 
 test.group('Auth login', (group) => {
   let userData: {
@@ -21,24 +49,26 @@ test.group('Auth login', (group) => {
   let registeredUser: User
   group.setup(async () => {
     await testUtils.db().seed()
-    class FakeNotificationService extends NotificationService {
-      async queue() {
-        return
-      }
-    }
-    class FakeEmailService extends EmailService {
-      async queue() {
-        return
-      }
-    }
-    app.container.swap(NotificationService, () => new FakeNotificationService())
-    app.container.swap(EmailService, () => new FakeEmailService())
+    const fakedNotification = new FakeNotificationService(
+      new FakeQueueService(),
+      new FakeNodeRedis()
+    )
+    app.container.swap(
+      NotificationService,
+      () => new FakeNotificationService(new FakeQueueService(), new FakeNodeRedis())
+    )
+    app.container.swap(
+      EmailService,
+      () => new FakeEmailService(new FakeQueueService(), fakedNotification)
+    )
     return async () => {
       await Notification.query().delete()
       await Transaction.query().delete()
       await Account.query().delete()
       await User.query().delete()
       await Currency.query().delete()
+      app.container.restore(NodeRedis)
+      app.container.restore(QueueService)
       app.container.restore(EmailService)
       app.container.restore(NotificationService)
     }

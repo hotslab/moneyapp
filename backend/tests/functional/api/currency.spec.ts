@@ -51,7 +51,7 @@ test.group('Api currency', (group) => {
     }
     const user = await User.create(userData)
     const requestData = {
-      amount: faker.number.float({ min: 100, max: 100000, fractionDigits: 2 }),
+      amount: faker.number.float({ min: 100, max: 10000, fractionDigits: 2 }),
       senderCurrencyCode: currencyCodes[Math.floor(Math.random() * currencyCodes.length)],
       receiverCurrencyCode: currencyCodes[Math.floor(Math.random() * currencyCodes.length)],
     }

@@ -46,11 +46,16 @@ export default class NotificationQueue extends BaseCommand {
       )
     })
 
-    notificationWorker.on('failed', async (job: Job) => {
+    notificationWorker.on('failed', async (job: Job<any, any, string> | undefined) => {
       this.logger.info('=========================================================================')
-      this.logger.error(
-        `NOTIFICATION: Job ${job.id}-${job.name} failed due to ${job.failedReason} with data => ${JSON.stringify(job.data)}`
-      )
+      if (job)
+        this.logger.error(
+          `NOTIFICATION: Job ${job.id}-${job.name} failed due to ${job.failedReason} with data => ${JSON.stringify(job.data)}`
+        )
+      else
+        this.logger.error(
+          `NOTIFICATION: Unknown notification job failure reported by notification queue`
+        )
     })
 
     notificationWorker.on('error', (error) => {

@@ -1,5 +1,4 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
-import app from '@adonisjs/core/services/app'
 
 export default class extends BaseSeeder {
   private async runSeeder(Seeder: { default: typeof BaseSeeder }) {
@@ -19,6 +18,5 @@ export default class extends BaseSeeder {
 
   async run() {
     await this.runSeeder(await import('../currency_seeder.js'))
-    await this.runSeeder(await import('../user_seeder.js'))
   }
 }

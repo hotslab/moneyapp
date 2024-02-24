@@ -1,5 +1,4 @@
 import Transaction from '#models/transaction'
-import { Queue } from 'bullmq'
 import NotificationService from './notification_service.js'
 import EmailService from './email_service.js'
 import NotificationTypes from '../types/notification_types.js'
@@ -7,8 +6,17 @@ import EmailTypes from '../types/email_types.js'
 import logger from '@adonisjs/core/services/logger'
 import Account from '#models/account'
 import { inject } from '@adonisjs/core'
+import QueueService from './queue_service.js'
+import QueueTypes from '../types/queue_types.js'
 
+@inject()
 export default class TransactionService {
+  constructor(
+    protected queueService: QueueService,
+    protected emailService: EmailService,
+    protected notificationService: NotificationService
+  ) {}
+
   async queue(transactionData: {
     idempotency_key: string
     transaction_type: string
@@ -30,9 +38,8 @@ export default class TransactionService {
     auth_user_id: number
     receiver_user_id: number | null
   }) {
-    const transactionQueue = new Queue('transactions', {
-      connection: { host: 'moneyapp_redis', port: 6379 },
-    })
+    console.log('Actual is  RUN')
+    const transactionQueue = this.queueService.start(QueueTypes.transactions)
     await transactionQueue.add('create_transaction', transactionData)
   }
 
@@ -76,24 +83,6 @@ export default class TransactionService {
     } else return false
   }
 
-  async updateAccountBalances(
-    isDeposit: boolean,
-    isWithDrawal: boolean,
-    receiverAccount: Account | null,
-    senderAccount: Account | null,
-    recipientAmount: number,
-    senderAmount: number
-  ) {
-    if (!isWithDrawal && receiverAccount) {
-      receiverAccount.amount = receiverAccount.amount + recipientAmount
-      await receiverAccount.save()
-    }
-    if (!isDeposit && senderAccount) {
-      senderAccount.amount = senderAccount.amount - senderAmount
-      await senderAccount.save()
-    }
-  }
-
   async createTransaction(jobData: any): Promise<Transaction> {
     const transaction: Transaction = await Transaction.create({
       idempotencyKey: jobData.idempotency_key,
@@ -117,19 +106,34 @@ export default class TransactionService {
     return transaction
   }
 
-  @inject()
+  async updateAccountBalances(
+    isDeposit: boolean,
+    isWithDrawal: boolean,
+    receiverAccount: Account | null,
+    senderAccount: Account | null,
+    recipientAmount: number,
+    senderAmount: number
+  ) {
+    if (!isWithDrawal && receiverAccount) {
+      receiverAccount.amount = receiverAccount.amount + recipientAmount
+      await receiverAccount.save()
+    }
+    if (!isDeposit && senderAccount) {
+      senderAccount.amount = senderAccount.amount - senderAmount
+      await senderAccount.save()
+    }
+  }
+
   async sendSuccessNotifications(
-    jobId: string | undefined,
-    jobName: string,
     newTransactionId: number,
     receiverUserId: number | null,
     senderUserId: number | null,
-    emailService: EmailService,
-    notificationService: NotificationService
+    jobName?: string | null | undefined,
+    jobId?: string | null | undefined
   ) {
     logger.info('=========================================================================')
     logger.info(
-      `TRANSACTION: PARAMS ${jobId || '#'}-${jobName} => ${JSON.stringify({
+      `TRANSACTION: PARAMS ${jobId || '#'}-${jobName || 'transaction'} => ${JSON.stringify({
         jobId: jobId,
         jobName: jobName,
         newTransactionId: newTransactionId,
@@ -137,19 +141,17 @@ export default class TransactionService {
         senderUserId: senderUserId,
         receiverUserIdS: receiverUserId ? 'Yes' : 'No',
         senderUserIdS: senderUserId ? 'Yes' : 'No',
-        emailService: emailService,
-        notificationService: notificationService,
       })}`
     )
     const savedTransaction: Transaction = await Transaction.findOrFail(newTransactionId)
-    emailService.queue({
+    await this.emailService.queue({
       type: EmailTypes.TRANSACTION_EMAIL,
       emailData: {
         transaction: savedTransaction,
         isSender: true,
       },
     })
-    emailService.queue({
+    await this.emailService.queue({
       type: EmailTypes.TRANSACTION_EMAIL,
       emailData: {
         transaction: savedTransaction,
@@ -157,7 +159,7 @@ export default class TransactionService {
       },
     })
     if (receiverUserId) {
-      notificationService.queue({
+      await this.notificationService.queue({
         type: NotificationTypes.NEW_TRANSACTION,
         user_id: receiverUserId,
         message: `
@@ -170,7 +172,7 @@ export default class TransactionService {
       })
     }
     if (senderUserId) {
-      notificationService.queue({
+      await this.notificationService.queue({
         type: NotificationTypes.NEW_TRANSACTION,
         user_id: senderUserId,
         message: `
@@ -184,29 +186,23 @@ export default class TransactionService {
     }
     logger.info('=========================================================================')
     logger.info(
-      `TRANSACTION: Email notification jobs created for job ${jobId || '#'}-${jobName} => ${JSON.stringify(savedTransaction)}`
+      `TRANSACTION: Email notification jobs created for job ${jobId || '#'}-${jobName || 'transaction'} => ${JSON.stringify(savedTransaction)}`
     )
   }
 
-  @inject()
-  async duplicateTransactionNotification(
-    exists: Transaction,
-    jobDataAuthUserId: number,
-    notificationService: NotificationService,
-    emailService: EmailService
-  ) {
+  async duplicateTransactionNotification(exists: Transaction, jobDataAuthUserId: number) {
     const message: string = `Your transaction to send ${exists.senderCurrencySymbol} ${exists.senderAmount}
     to ${exists.recipientName} (email: ${exists.recipientEmail}, Account No: ${exists.recipientAccountNumber})
     has been already completed, so this new request for the same transaction has been cancelled. 
     Please check your account balances are in order to prevent fraud nad protect yourself from harm.
     `
-    await notificationService.queue({
+    await this.notificationService.queue({
       type: NotificationTypes.TRANSACTION_ALREADY_COMPLETED,
       user_id: jobDataAuthUserId,
       message: message,
       sendSocketNotification: true,
     })
-    await emailService.queue({
+    await this.emailService.queue({
       type: EmailTypes.TRANSACTION_EMAIL,
       emailData: {
         transaction: null,
@@ -221,14 +217,13 @@ export default class TransactionService {
     })
   }
 
-  @inject()
-  async jobFailed(job: any, emailService: EmailService, notificationService: NotificationService) {
+  async jobFailed(jobData: any) {
     const message: string = `
       Your transaction for the amount of 
-      ${job.data.sender_currency_symbol} ${Number.parseFloat(job.data.sender_amount).toFixed(2)} 
-      to ${job.data.recipient_name} (${job.data.recipient_email}) has failed. Please try again.
+      ${jobData.sender_currency_symbol} ${Number.parseFloat(jobData.sender_amount).toFixed(2)} 
+      to ${jobData.recipient_name} (${jobData.recipient_email}) has failed. Please try again.
     `
-    await emailService.queue({
+    await this.emailService.queue({
       type: EmailTypes.TRANSACTION_EMAIL,
       emailData: {
         transaction: null,
@@ -236,14 +231,14 @@ export default class TransactionService {
         isError: true,
         errorMessage: {
           message: message,
-          email: job.data.sender_email,
-          userName: job.data.sender_name,
+          email: jobData.sender_email,
+          userName: jobData.sender_name,
         },
       },
     })
-    await notificationService.queue({
+    await this.notificationService.queue({
       type: NotificationTypes.TRANSACTION_FAILED,
-      user_id: job.data.auth_user_id,
+      user_id: jobData.auth_user_id,
       message: message,
       sendSocketNotification: true,
     })

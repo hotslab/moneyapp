@@ -1,5 +1,5 @@
 import User from '#models/user'
-import { deleteUserValidator, showUserValidator, updateUserValidator } from '#validators/user'
+import { deleteUserValidator, updateUserValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class UsersController {

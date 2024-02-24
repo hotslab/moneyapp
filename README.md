@@ -2,16 +2,21 @@
 
 ### Before running docker-compose up
 
-- ensure pgdata and redis folders are created by running the command
+-
 
 ```
-mkdir pgdata redis
+sudo rm -R  redis/ pgdata/ npmCacheBackend/ npmCacheFrontend/
 ```
 
-- check your local user and ensure that user is the owner of the folders
+- ensure the local cache folders are created by running the command
 
 ```
-echo $USER
-ls -la redis/
-ls -la pgdata/
+mkdir redis/ pgdata/ npmCacheBackend/ npmCacheFrontend/
+```
+
+- ensure your local user and ensure that user is the owner of the folders before running docker-compose up --build
+
+
+```
+sudo chown -R $USER:$USER redis/ pgdata/ npmCacheBackend/ npmCacheFrontend/
 ```

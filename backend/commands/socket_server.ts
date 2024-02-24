@@ -2,7 +2,7 @@ import env from '#start/env'
 import { BaseCommand } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Server } from 'socket.io'
-import redis from '#services/redis_service'
+import NodeRedis from '#services/redis_service'
 import { inject } from '@adonisjs/core'
 
 export default class SocketServer extends BaseCommand {
@@ -15,13 +15,14 @@ export default class SocketServer extends BaseCommand {
   }
 
   @inject()
-  async run() {
+  async run(nodeRedis: NodeRedis) {
     const envPort = env.get('SOCKET_PORT')
     const port: number = envPort ? Number.parseInt(envPort) : 4444
     this.logger.info(`${port} This is here`)
     const io = new Server(port, {
       cors: { origin: '*' },
     })
+    const redis = await nodeRedis.io()
 
     io.on('connection', async (socket) => {
       this.logger.info(`Client connedted with id ${socket.id}`)
@@ -37,7 +38,6 @@ export default class SocketServer extends BaseCommand {
       console.log('SOCKET_CONNECTION_ERROR', err.message) // the error message, for example "Session ID unknown"
       console.log('SOCKET_CONNECTION_ERROR', err.context) // some additional error context
     })
-
     await redis.subscribe('notification', (message, channel) => {
       console.log(message, channel)
       this.logger.info(`Received ${message} from ${channel}`)

@@ -5,9 +5,9 @@ import type { Config } from '@japa/runner/types'
 import { pluginAdonisJS } from '@japa/plugin-adonisjs'
 import testUtils from '@adonisjs/core/services/test_utils'
 import { expectTypeOf } from '@japa/expect-type'
+import { expect } from '@japa/expect'
 import { authApiClient } from '@adonisjs/auth/plugins/api_client'
 
-console.log('APP',  app)
 /**
  * This file is imported by the "bin/test.ts" entrypoint file
  */
@@ -22,6 +22,7 @@ export const plugins: Config['plugins'] = [
   pluginAdonisJS(app),
   expectTypeOf(),
   authApiClient(app),
+  expect(),
 ]
 
 /**
@@ -34,19 +35,7 @@ export const plugins: Config['plugins'] = [
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
   setup: [
     async () => {
-      // await exec('node ace migration:fresh', (error, stdout, stderr) => {
-      //   if (error) {
-      //     console.error(`Failed run migation: ${error.message}`)
-      //     return
-      //   }
-      //   if (stderr) {
-      //     console.error(`Error: ${stderr}`)
-      //     return
-      //   }
-      //   console.log(`Migration started: ${stdout}`)
-      // })
       await testUtils.db().migrate()
-      // testUtils.db().truncate()
     },
   ],
   teardown: [],

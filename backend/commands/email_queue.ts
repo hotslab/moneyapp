@@ -3,7 +3,6 @@ import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Job, Worker } from 'bullmq'
 import { inject } from '@adonisjs/core'
 import EmailTypes from '../app/types/email_types.js'
-import NotificationService from '#services/notification_service'
 import EmailService from '#services/email_service'
 
 export default class EmailQueue extends BaseCommand {
@@ -16,7 +15,7 @@ export default class EmailQueue extends BaseCommand {
   }
 
   @inject()
-  async run(emailService: EmailService, notificationService: NotificationService) {
+  async run(emailService: EmailService) {
     const emailWorker: Worker = new Worker(
       'emails',
       async (job) => {
@@ -32,8 +31,7 @@ export default class EmailQueue extends BaseCommand {
         await emailService.createNotifications(
           job.name as keyof typeof EmailTypes,
           job.data.user_id,
-          job.data.mailMessage,
-          notificationService
+          job.data.mailMessage
         )
       },
       {
@@ -51,11 +49,13 @@ export default class EmailQueue extends BaseCommand {
       )
     })
 
-    emailWorker.on('failed', async (job: Job) => {
+    emailWorker.on('failed', async (job: Job<any, any, string> | undefined) => {
       this.logger.info('=========================================================================')
-      this.logger.error(
-        `EMAIL: Job ${job.id}-${job.name} failed with data => ${JSON.stringify(job.data)}`
-      )
+      if (job)
+        this.logger.error(
+          `EMAIL: Job ${job.id}-${job.name} failed with data => ${JSON.stringify(job.data)}`
+        )
+      else this.logger.error(`EMAIL: Unknown email job failure reported by email queue`)
     })
 
     emailWorker.on('error', (error) => {

@@ -3,7 +3,6 @@ import { inject } from '@adonisjs/core'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
 import { Job, Worker } from 'bullmq'
 import Transaction from '#models/transaction'
-import EmailService from '#services/email_service'
 import NotificationService from '#services/notification_service'
 import TransactionTypes from '../app/types/transaction_types.js'
 import NotificationTypes from '../app/types/notification_types.js'
@@ -19,11 +18,7 @@ export default class TransactionQueue extends BaseCommand {
   }
 
   @inject()
-  async run(
-    transactionService: TransactionService,
-    emailService: EmailService,
-    notificationService: NotificationService
-  ) {
+  async run(transactionService: TransactionService, notificationService: NotificationService) {
     const transactionWorker: Worker = new Worker(
       'transactions',
       async (job: Job) => {
@@ -69,13 +64,11 @@ export default class TransactionQueue extends BaseCommand {
                   Number.parseFloat(job.data.sender_amount)
                 )
                 await transactionService.sendSuccessNotifications(
-                  job.id,
-                  job.name,
                   transaction.id,
                   receiverAccount ? receiverAccount.userId : null,
                   senderAccount ? senderAccount.userId : null,
-                  emailService,
-                  notificationService
+                  job.name,
+                  job.id
                 )
               } else {
                 this.logger.info(
@@ -108,12 +101,7 @@ export default class TransactionQueue extends BaseCommand {
               `TRANSACTION: This job ${job.id}-${job.name} was already completed. Transaction ID ${exists.id} - ${exists.idempotencyKey} not done with data => ${JSON.stringify(job.data)}`
             )
             if (exists.senderEmail) {
-              transactionService.duplicateTransactionNotification(
-                exists,
-                job.data.auth_user_id,
-                notificationService,
-                emailService
-              )
+              transactionService.duplicateTransactionNotification(exists, job.data.auth_user_id)
             }
           }
         }
@@ -133,14 +121,19 @@ export default class TransactionQueue extends BaseCommand {
       )
     })
 
-    transactionWorker.on('failed', async (job: Job) => {
-      if (job.name === 'create_transaction') {
-        await transactionService.jobFailed(job, emailService, notificationService)
-      }
+    transactionWorker.on('failed', async (job: Job<any, any, string> | undefined) => {
       this.logger.info('=========================================================================')
-      this.logger.error(
-        `TRANSACTION: Job ${job.id}-${job.name} failed => Reason ${job.failedReason} => ${JSON.stringify(job.data)}`
-      )
+      if (job) {
+        if (job.name === 'create_transaction') {
+          await transactionService.jobFailed(job.data)
+        }
+        this.logger.error(
+          `TRANSACTION: Job ${job.id}-${job.name} failed => Reason ${job.failedReason} => ${JSON.stringify(job.data)}`
+        )
+      } else
+        this.logger.error(
+          `TRANSACTION: Unknown transaction job failure reported by transaction queue`
+        )
     })
 
     transactionWorker.on('error', (error) => {

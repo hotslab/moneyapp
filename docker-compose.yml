@@ -3,6 +3,7 @@ version: '3.8'
 networks:
   moneyapp_network:
     name: moneyapp_network
+    driver: bridge
 
 services:
   moneyapp_postgres:
@@ -10,14 +11,12 @@ services:
     container_name: moneyapp_postgres
     environment:
       POSTGRES_PASSWORD: example
-      POSTGRES_USER: root
-      POSTGRES_DB: moneyapp
+      POSTGRES_MULTIPLE_DATABASES: moneyapp,moneyappTest
     volumes:
-      # - /etc/timezone:/etc/timezone:rw
-      # - /etc/localtime:/etc/localtime:rw
       - ./pgdata:/var/lib/postgresql/data
+      - ./postgre-init.sh:/docker-entrypoint-initdb.d/postgre-init.sh
     ports:
-      - 5433:5432
+      - 5432:5432
     restart: unless-stopped
     networks:
       - moneyapp_network
@@ -26,8 +25,6 @@ services:
     image : redis:7.2.4
     container_name: moneyapp_redis
     volumes:
-      # - /etc/timezone:/etc/timezone:rw
-      # - /etc/localtime:/etc/localtime:rw
       - ./redis:/data
     ports:
       - 6379:6379
@@ -39,6 +36,7 @@ services:
 
   moneyapp_backend:
     image : moneyapp_backend
+    # cpus: 2
     container_name: moneyapp_backend
     build:
       context: ./
@@ -47,8 +45,6 @@ services:
       - ./backend:/var/www
       - /var/www/node_modules
       - ./npmCacheBackend:/root/.npm
-      # - /etc/timezone:/etc/timezone:rw
-      # - /etc/localtime:/etc/localtime:rw
     ports:
       - 3333:3333
       - 4444:4444
@@ -71,8 +67,6 @@ services:
        - ./frontend:/var/www
        - /var/www/node_modules
        - ./npmCacheFrontend:/root/.npm
-      # - /etc/timezone:/etc/timezone:rw
-      # - /etc/localtime:/etc/localtime:rw
     ports:
       - 3000:3000
     networks:
@@ -92,7 +86,7 @@ services:
       context: ./
       dockerfile: nginx.dockerfile
     ports:
-      - 3050:80
+      - 8888:80
     networks:
       - moneyapp_network
     depends_on:

@@ -9,6 +9,41 @@ import { faker } from '@faker-js/faker'
 import { test } from '@japa/runner'
 import { v4 as uuidv4 } from 'uuid'
 import TransactionTypes from '../../../app/types/transaction_types.js'
+import QueueService from '#services/queue_service'
+import NodeRedis from '#services/redis_service'
+import NotificationService from '#services/notification_service'
+import EmailService from '#services/email_service'
+
+class FakeQueueService extends QueueService {
+  start: any = () => {
+    return {
+      add() {},
+    }
+  }
+}
+class FakeNodeRedis extends NodeRedis {
+  async io(): Promise<any> {
+    return {
+      subscribe: () => {},
+      publish: () => {},
+    }
+  }
+}
+class FakeNotificationService extends NotificationService {
+  async queue() {
+    return
+  }
+}
+class FakeEmailService extends EmailService {
+  async queue() {
+    return
+  }
+}
+class FakeTransactionService extends TransactionService {
+  async queue() {
+    return
+  }
+}
 
 test.group('Api transaction', (group) => {
   let receiverUser: User
@@ -23,12 +58,15 @@ test.group('Api transaction', (group) => {
   group.setup(async () => {
     await testUtils.db().seed()
 
-    class FakeTransactionService extends TransactionService {
-      async queue() {
-        return
-      }
-    }
-    app.container.swap(TransactionService, () => new FakeTransactionService())
+    const fakedQueue = new FakeQueueService()
+    const fakedRedis = new FakeNodeRedis()
+    const fakedNotification = new FakeNotificationService(fakedQueue, fakedRedis)
+    const fakedEmail = new FakeEmailService(fakedQueue, fakedNotification)
+
+    app.container.swap(
+      TransactionService,
+      () => new FakeTransactionService(fakedQueue, fakedEmail, fakedNotification)
+    )
 
     currencyCodes = env
       .get('CURRENCIES', `EUR,GBP,USD,JPY,CHF,AUD,CAD,CNY,NZD,INR,SEK,ZAR,HKD`)

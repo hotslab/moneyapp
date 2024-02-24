@@ -4,7 +4,8 @@ import Notification from '#models/notification'
 import User from '#models/user'
 import { faker } from '@faker-js/faker'
 import { test } from '@japa/runner'
-import NotificationTypes from '../../../app/types/notification_types.js'
+import NotificationTypes from '../../../../app/types/notification_types.js'
+import EmailTypes from '../../../../app/types/email_types.js'
 
 test.group('Notification create', (group) => {
   let currencyData: (typeof currencies)[0]
@@ -44,7 +45,9 @@ test.group('Notification create', (group) => {
   test('new notification property types are correct', async ({ expectTypeOf }) => {
     expectTypeOf(notification.userId).toEqualTypeOf<number>()
     expectTypeOf(notification.message).toEqualTypeOf<string>()
-    expectTypeOf(notification.type).toEqualTypeOf<keyof typeof NotificationTypes>()
+    expectTypeOf(notification.type).toEqualTypeOf<
+      keyof typeof NotificationTypes | keyof typeof EmailTypes
+    >()
     expectTypeOf(notification.read).toEqualTypeOf<boolean>()
   })
 

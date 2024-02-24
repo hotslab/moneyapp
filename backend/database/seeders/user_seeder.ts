@@ -34,18 +34,6 @@ export default class UserSeeder extends BaseSeeder {
         password: 'tested',
         verified: true,
       },
-      {
-        email: 'hotslices7@gmail.com',
-        userName: 'hotslices',
-        password: 'tested',
-        verified: true,
-      },
-      {
-        email: 'gomantrix@gmail.com',
-        userName: 'gomantrix',
-        password: 'tested',
-        verified: true,
-      },
     ])
     for (const user of users) {
       const currency = await Currency.findBy(
