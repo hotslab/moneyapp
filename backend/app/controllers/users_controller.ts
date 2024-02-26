@@ -5,7 +5,10 @@ import type { HttpContext } from '@adonisjs/core/http'
 export default class UsersController {
   async index({ auth, response }: HttpContext) {
     const authUser: User = auth.getUserOrFail()
-    const users: Array<User> = await User.query().preload('accounts').whereNot('id', authUser.id)
+    const users: Array<User> = await User.query()
+      .preload('accounts')
+      .where('verified', true)
+      .whereNot('id', authUser.id)
     response.status(200).send({ users: users })
   }
 

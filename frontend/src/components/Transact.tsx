@@ -117,7 +117,7 @@ function Transact({
           },
           {
             headers: {
-              idempotency_key: idempotencyKey,
+              idempotencyKey: idempotencyKey,
             },
           }
         )

@@ -4,12 +4,13 @@ import { deleteAccountValidator, storeAccountValidator } from '#validators/accou
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AccountsController {
-  async index({ auth, response }: HttpContext) {
-    const authUser = auth.getUserOrFail()
+  async index({ request, response }: HttpContext) {
     const accounts: Array<Account> = await Account.query()
       .preload('currency')
       .preload('user')
-      .where('user_id', authUser.id)
+      .where((query) => {
+        if (request.input('user_id')) query.where('user_id', request.input('user_id'))
+      })
       .orderBy('createdAt', 'desc')
     response.status(200).send({
       accounts: accounts,

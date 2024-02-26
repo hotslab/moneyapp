@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import axiosApi from "../api";
 import { NavigateFunction, useNavigate, useParams } from "react-router-dom";
 import Transact from "../components/Transact";
@@ -97,7 +97,7 @@ function Accounts() {
 
   function getAccounts(authUser: any) {
     setLoading(true);
-    axiosApi.get(`api/accounts`).then(
+    axiosApi.get(`api/accounts?user_id=${userId}`).then(
       (response: AxiosResponse) => {
         setAccountUser(response.data.user);
         setAccounts(response.data.accounts);
@@ -115,8 +115,8 @@ function Accounts() {
   }
 
   function openConfirmModal(selectedAccount: any) {
-    setSenderAccount(selectedAccount)
-    setShowConfirmModal(true)
+    setSenderAccount(selectedAccount);
+    setShowConfirmModal(true);
   }
 
   async function deleteAccount(deleteAccount: boolean) {
@@ -131,7 +131,7 @@ function Accounts() {
             message: response.data.message,
             type: MessageTypes.info,
           });
-          getAccounts(authUser)
+          getAccounts(authUser);
         },
         (error) => {
           let message = parseAxiosError(error);
@@ -226,7 +226,7 @@ function Accounts() {
                       )}
                       {isAuthUser() && (
                         <th scope="col" className="px-6 py-3">
-                          Withdraw / Deposit
+                          Deposit / Withdraw
                         </th>
                       )}
                       {isAuthUser() && (
@@ -279,7 +279,7 @@ function Accounts() {
                               onClick={() => sendMoney(account)}
                               className="font-medium text-green-600 hover:underline mr-2"
                             >
-                              Pay
+                              Pay User
                             </button>
                           </th>
                         )}
@@ -321,7 +321,9 @@ function Accounts() {
                               onClick={() => openWithdrawOrAddModal(account)}
                               className="font-medium text-purple-700 hover:underline mr-2"
                             >
-                              Deposit
+                              <span className="text-green-600">Add</span>
+                              {"/"}
+                              <span className="text-red-600">Draw</span>
                             </button>
                           </th>
                         )}

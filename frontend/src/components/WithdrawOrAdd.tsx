@@ -78,7 +78,7 @@ function WithdrawOrAdd({
           },
           {
             headers: {
-              idempotency_key: idempotencyKey,
+              idempotencyKey: idempotencyKey,
             },
           }
         )

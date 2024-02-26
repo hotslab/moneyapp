@@ -11,7 +11,7 @@ services:
     container_name: moneyapp_postgres
     environment:
       POSTGRES_PASSWORD: example
-      POSTGRES_MULTIPLE_DATABASES: moneyapp,moneyappTest
+      POSTGRES_MULTIPLE_DATABASES: moneyapp,moneyappdev,moneyapptest
     volumes:
       - ./pgdata:/var/lib/postgresql/data
       - ./postgre-init.sh:/docker-entrypoint-initdb.d/postgre-init.sh

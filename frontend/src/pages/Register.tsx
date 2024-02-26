@@ -31,7 +31,7 @@ function Register() {
           user_name: userName,
           password: password,
           email: email,
-          currencyId: currencyId,
+          currency_id: currencyId,
         })
         .then(
           (response: AxiosResponse) => {

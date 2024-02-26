@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       .createTable(this.tableName, (table) => {
         table.increments('id')
         table.string('idempotency_key').notNullable().unique()
-        table.decimal('conversion_rate', 8, 6)
+        table.decimal('conversion_rate', 12, 6)
 
         // sender details
         table.integer('sender_amount').defaultTo(0)

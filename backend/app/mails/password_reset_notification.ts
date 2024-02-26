@@ -1,5 +1,6 @@
 import { BaseMail } from '@adonisjs/mail'
 import User from '#models/user'
+import env from '#start/env'
 
 export default class PasswordResetNotification extends BaseMail {
   user: User
@@ -20,7 +21,7 @@ export default class PasswordResetNotification extends BaseMail {
     this.message.to(this.user.email).html(`
       <h1> Hello ${this.user.userName} </h1>
       <p> Please reset your password by clicking the following link below: </p>
-      <p> <a href="http://localhost:3000/reset-password/${this.passwordResetToken}">Reset password</a></p>
+      <p> <a href="${env.get('FRONTEND_URL')}/reset-password/${this.passwordResetToken}">Reset password</a></p>
     `)
   }
 }

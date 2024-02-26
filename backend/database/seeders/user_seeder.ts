@@ -4,6 +4,8 @@ import Account from '#models/account'
 import Currency from '#models/currency'
 
 export default class UserSeeder extends BaseSeeder {
+  static environment = ['development', 'testing']
+
   async run() {
     const currencies = [
       'EUR',
@@ -31,6 +33,18 @@ export default class UserSeeder extends BaseSeeder {
       {
         email: 'new@test.com',
         userName: 'janeNew',
+        password: 'tested',
+        verified: true,
+      },
+      {
+        email: 'hotslices7@gmail.com',
+        userName: 'hotslices',
+        password: 'tested',
+        verified: true,
+      },
+      {
+        email: 'gomantrix@gmail.com',
+        userName: 'gomantrix',
         password: 'tested',
         verified: true,
       },

@@ -13,9 +13,11 @@ import {
   verifyEmailValidator,
 } from '#validators/auth'
 import { inject } from '@adonisjs/core'
+import env from '#start/env'
 
 export default class AuthController {
   async login({ request, response }: HttpContext) {
+    console.log(request.all(), env.get('NODE_ENV'))
     const payload = await request.validateUsing(loginValidator)
     const user: User = await User.verifyCredentials(payload.email, payload.password)
     const token = await User.accessTokens.create(user)

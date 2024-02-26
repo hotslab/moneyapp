@@ -13,6 +13,8 @@ COPY ./backend ./
 
 RUN node ace build --no-assets
 
+RUN cp .env.prod.example /build/.env
+
 ADD backend-supervisor.conf /etc/supervisor/conf.d/backend-supervisor.conf
 
 RUN mkdir -p /var/log/supervisor

@@ -90,6 +90,24 @@ export default class Transaction extends BaseModel {
   declare recipientAccount: BelongsTo<typeof Account>
 
   @beforeSave()
+  static async saveConversionAmount(transaction: Transaction) {
+    try {
+      if (transaction.$dirty.conversionRate) {
+        console.log(
+          'CONVERTED AMOUNT',
+          transaction.conversionRate,
+          Number.parseFloat(Number.parseFloat(`${transaction.conversionRate}`).toFixed(5))
+        )
+        transaction.conversionRate = Number.parseFloat(
+          Number.parseFloat(`${transaction.conversionRate}`).toFixed(5)
+        )
+      }
+    } catch (error) {
+      logger.error({ error: error }, 'SAVE TRANSACTION AMOUNT ERROR')
+    }
+  }
+
+  @beforeSave()
   static async saveAmountsAsInteger(transaction: Transaction) {
     try {
       if (transaction.$dirty.senderAmount) {

@@ -24,7 +24,7 @@ export default class TransactionsController {
   async store({ auth, request, response }: HttpContext, transactionService: TransactionService) {
     // first validation
     const data = {
-      idempotency_key: request.header('idempotency_key') as string,
+      idempotency_key: request.header('idempotencyKey') as string,
       ...request.all(),
     }
     const payload = await storeTransactionValidator.validate(data)
