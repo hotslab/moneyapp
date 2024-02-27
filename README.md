@@ -85,18 +85,21 @@ docker-compose up --build
 - Users can register and login with credentials for security as is standard for financial applications, with email verification to ensure it is them.  
 <img alt="login" src="screenshots/login.png" height="350" />
 <img alt="register" src="screenshots/register.png" height="350" />
+
 - It allows clients to open multiple foreign currency accounts.  
 <img alt="client's accounts" src="screenshots/accounts.png" height="350" />
 <img alt="create new account" src="screenshots/new-account.png" height="350" />
+
 - it allows clients to deposit and withdraw money into their accounts with a simple simulated page, which in the future will be integrated with real banking interfaces like `PayPal` e.t.c.  
-![deposit or withdraw](/screenshots/deposit-or-withdraw.png)
-<img alt="login" src="screenshots/login.png" height="350" />
+<img alt="deposit or withdraw" src="screenshots/deposit-or-withdraw.png" height="350" />
+
 - It allows them to also make transfers between their own multicurrency accounts at the the prevailing exchange rates.  
 <img alt="client's accounts" src="screenshots/accounts.png" height="350" />
 <img alt="select account to transfer to" src="screenshots/transfer-page.png" height="350" />
 <img alt="selected account initial transfer page" src="screenshots/transfer-waiting.png" height="350" />
 <img alt="selected account currency conversion" src="screenshots/transfer-details.png" height="350" />
 <img alt="transfer success notification" src="screenshots/transfer-notification.png" height="350" />
+
 - Clients can also pay other users on the system using an currency account they hold, which will be transferred also at the prevailing exchange rate.  
 <img alt="client's accounts" src="screenshots/accounts.png" height="350" />
 <img alt="list of users to transfer to" src="screenshots/users.png" height="350" />
@@ -104,9 +107,11 @@ docker-compose up --build
 <img alt="initial payment page" src="screenshots/payment-page.png" height="350" />
 <img alt="payment currency conversion" src="screenshots/payment-details.png" height="350" />
 <img alt="payment success notification" src="screenshots/payment-notification.png" height="350" />
+
 - The system sends real time notifications of successful transactions via sockets or emails.  
 <img alt="list of notifications" src="screenshots/notifications.png" height="350" />
 <img alt="viewed notification" src="screenshots/viewed-notification.png" height="350" />
+
 
 #### 5. Back End
 
