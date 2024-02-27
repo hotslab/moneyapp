@@ -50,7 +50,6 @@ function App() {
         user_id: number;
         type: keyof typeof MessageTypes | keyof typeof ServerNotificationTypes;
       }) => {
-        console.log("CONNECTION SENT", { message, user_id, type });
         const user = sessionStorage.getItem("authUser");
         if (user) {
           const authUser = JSON.parse(user);

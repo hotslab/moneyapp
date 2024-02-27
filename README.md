@@ -36,12 +36,22 @@ sudo chown -R $USER:$USER redis/ pgdata/ npmCacheBackend/ npmCacheFrontend/
 
 #### Configuring backend .env files
 
-- Create the following `.env` files for the *production*, *development* and *testing* environments respectively
+- Create the frontend `.env` file inside the `frontend/` folder by running the following commands:
 
 ```bash
+cd frontend/
+cp .env.example .env
+```
+
+#### Configuring backend .env files
+
+- Create the following `.env` files for the *production*, *development* and *testing* environments respectively inside the `backend/` folder.
+
+```bash
+cd frontend/
 cp .env.prod.example build/.env
 cp .env.dev.example .env
-cp .env.test.example .env
+cp .env.test.example .env.test
 ```
 
 - NB: The the following `.env` fields need to be filled with the following API keys in order to use their services:  

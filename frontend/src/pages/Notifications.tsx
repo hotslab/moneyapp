@@ -7,6 +7,7 @@ import Loading from "../components/Loading";
 import useEventEmitter from "../services/useEventEmitter";
 import EmitterEvents from "../types/emitterEvents";
 import MessageTypes from "../types/messageTypes";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function Users() {
   const { dispatch } = useEventEmitter();
@@ -24,10 +25,9 @@ function Users() {
     axiosApi.put(`api/notifications/${id}`).then(
       () => getNotifications(),
       (error: AxiosError) => {
+        const message = parseAxiosError(error);
         dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-          message: error.response?.data
-            ? (error.response.data as any).message
-            : error.message,
+          message: message,
           type: MessageTypes.error,
         });
       }
@@ -48,10 +48,7 @@ function Users() {
         dispatch(EmitterEvents.SET_NOTIFICATIONS, response.data.notifications);
         setLoading(false);
       },
-      (error) => {
-        console.log(error);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
   }
 

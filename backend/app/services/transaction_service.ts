@@ -38,7 +38,6 @@ export default class TransactionService {
     auth_user_id: number
     receiver_user_id: number | null
   }) {
-    console.log('Actual is  RUN')
     const transactionQueue = this.queueService.start(QueueTypes.transactions)
     await transactionQueue.add('create_transaction', transactionData)
   }
@@ -53,15 +52,11 @@ export default class TransactionService {
   }> {
     let senderAccount: Account | null = null
     let receiverAccount: Account | null = null
-    console.log('CHECK DATA', isDeposit, !isDeposit, isWithDrawal, !isWithDrawal, jobData)
     if (!isWithDrawal) {
-      console.log('THIS DEPOSIT IS INVOKED', jobData.recipient_account_id)
       receiverAccount = await Account.findOrFail(jobData.recipient_account_id)
       await receiverAccount.load('user')
     }
-    console.log('berore invoking', isWithDrawal)
     if (!isDeposit) {
-      console.log('THIS WITHDRAWAL IS INVOKED', jobData.sender_account_id)
       senderAccount = await Account.findOrFail(jobData.sender_account_id)
       await senderAccount.load('user')
     }

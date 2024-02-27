@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import axiosApi from "../api";
 import { useEffect, useState } from "react";
 import useValidator from "../services/useValidator";
@@ -6,6 +6,7 @@ import Spinner from "./Spinner";
 import useEventEmitter from "../services/useEventEmitter";
 import MessageTypes from "../types/messageTypes";
 import EmitterEvents from "../types/emitterEvents";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function CreateAccount({
   existingAccounts,
@@ -56,11 +57,10 @@ function CreateAccount({
           setLoading(true);
           closeAccountModal(true);
         },
-        (error) => {
+        (error: AxiosError) => {
+          const message = parseAxiosError(error);
           dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-            message: error.response?.data
-              ? (error.response.data as any).message
-              : error.message,
+            message: message,
             type: MessageTypes.error,
           });
           setLoading(true);

@@ -6,6 +6,7 @@ import MessageTypes from "../types/messageTypes";
 import EmitterEvents from "../types/emitterEvents";
 import useEventEmitter from "../services/useEventEmitter";
 import { AxiosError, AxiosResponse } from "axios";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function VerifyEmail() {
   const { dispatch } = useEventEmitter();
@@ -25,10 +26,9 @@ function VerifyEmail() {
         navigate("/login");
       },
       (error: AxiosError) => {
+        const message = parseAxiosError(error);
         dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-          message: error.response?.data
-            ? (error.response.data as any).message
-            : error.message,
+          message: message,
           type: MessageTypes.error,
         });
         setLoading(false);

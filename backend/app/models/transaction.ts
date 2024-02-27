@@ -92,16 +92,10 @@ export default class Transaction extends BaseModel {
   @beforeSave()
   static async saveConversionAmount(transaction: Transaction) {
     try {
-      if (transaction.$dirty.conversionRate) {
-        console.log(
-          'CONVERTED AMOUN to 6',
-          transaction.conversionRate,
-          Number.parseFloat(Number.parseFloat(`${transaction.conversionRate}`).toFixed(6))
-        )
+      if (transaction.$dirty.conversionRate)
         transaction.conversionRate = Number.parseFloat(
           Number.parseFloat(`${transaction.conversionRate}`).toFixed(6)
         )
-      }
     } catch (error) {
       logger.error({ error: error }, 'SAVE TRANSACTION AMOUNT ERROR')
     }
@@ -111,54 +105,22 @@ export default class Transaction extends BaseModel {
   static async saveAmountsAsInteger(transaction: Transaction) {
     try {
       if (transaction.$dirty.senderAmount) {
-        console.log('transaction sender beforeSave INVOKED', transaction.senderAmount)
         const senderCurrency = await Currency.find(transaction.senderCurrencyId)
-        if (senderCurrency) {
-          console.log(
-            'sender BEFORE',
-            transaction.senderAmount,
-            senderCurrency.decimalDigits,
-            senderCurrency.decimalDigits <= 0,
-            Math.pow(10, senderCurrency.decimalDigits)
-          )
+        if (senderCurrency)
           transaction.senderAmount = Math.round(
             transaction.senderAmount *
               (senderCurrency.decimalDigits <= 0 ? 1 : Math.pow(10, senderCurrency.decimalDigits))
           )
-          console.log(
-            'sender AFTER',
-            transaction.senderAmount,
-            senderCurrency.decimalDigits,
-            senderCurrency.decimalDigits <= 0,
-            Math.pow(10, senderCurrency.decimalDigits)
-          )
-        }
       }
       if (transaction.$dirty.recipientAmount) {
-        console.log('transaction recipient beforeSave INVOKED', transaction.recipientAmount)
         const recipientCurrency = await Currency.find(transaction.recipientCurrencyId)
-        if (recipientCurrency) {
-          console.log(
-            'receiver BEFORE',
-            transaction.recipientAmount,
-            recipientCurrency.decimalDigits,
-            recipientCurrency.decimalDigits <= 0,
-            Math.pow(10, recipientCurrency.decimalDigits)
-          )
+        if (recipientCurrency)
           transaction.recipientAmount = Math.round(
             transaction.recipientAmount *
               (recipientCurrency.decimalDigits <= 0
                 ? 1
                 : Math.pow(10, recipientCurrency.decimalDigits))
           )
-          console.log(
-            'receiver AFTER',
-            transaction.recipientAmount,
-            recipientCurrency.decimalDigits,
-            recipientCurrency.decimalDigits <= 0,
-            Math.pow(10, recipientCurrency.decimalDigits)
-          )
-        }
       }
     } catch (error) {
       logger.error({ error: error }, 'SAVE TRANSACTION AMOUNT ERROR')

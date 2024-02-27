@@ -1,7 +1,6 @@
 import { AxiosError } from "axios";
 
 export default function parseAxiosError(error: AxiosError): string {
-  console.log("STATUS", error.response?.statusText);
   let message = "";
   const errorBody = error.response?.data as any;
   if (errorBody) {

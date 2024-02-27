@@ -30,7 +30,7 @@ function Transact({
     useState<boolean>(true);
   const [isSameUser, setIsSameUser] = useState<boolean>(false);
   const [rateConverted, setRateConverted] = useState<boolean>(false);
-  const [conversionRate, setConversionRate] = useState<number>(0);
+  const [conversionRate, setConversionRate] = useState<number>(1);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
   const [idempotencyKey, setIdempotencyKey] = useState<string>("");
 
@@ -61,12 +61,10 @@ function Transact({
               });
             setLoading(false);
           },
-          (error: any) => {
-            console.log(error.message);
+          (error: AxiosError) => {
+            const message = parseAxiosError(error)
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: error.response?.data
-                ? (error.response.data as any).message
-                : error.message,
+              message: message,
               type: MessageTypes.error,
             });
             setLoading(false);
@@ -76,7 +74,6 @@ function Transact({
   }
 
   function resetExchangeRate() {
-    console.log("INVOKED");
     setRateConverted(false);
   }
 
@@ -131,12 +128,11 @@ function Transact({
             });
             closeTransactModal(true);
           },
-          (error) => {
+          (error: AxiosError) => {
             setLoading(false);
+            const message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: error.response?.data
-                ? (error.response.data as any).message
-                : error.message,
+              message: message,
               type: MessageTypes.error,
             });
           }

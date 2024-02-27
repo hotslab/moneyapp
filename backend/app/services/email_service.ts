@@ -8,6 +8,7 @@ import NotificationService from './notification_service.js'
 import { inject } from '@adonisjs/core'
 import QueueService from './queue_service.js'
 import QueueTypes from '../types/queue_types.js'
+import logger from '@adonisjs/core/services/logger'
 
 @inject()
 export default class EmailService {
@@ -61,7 +62,7 @@ export default class EmailService {
           })
         )
     } catch (error) {
-      console.log('EMAIL SERVICE ERROR', error)
+      logger.error({ error: error }, 'EMAIL SERVICE ERROR')
     }
   }
 

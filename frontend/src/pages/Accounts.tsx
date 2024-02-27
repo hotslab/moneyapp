@@ -107,10 +107,7 @@ function Accounts() {
         );
         setLoading(false);
       },
-      (error) => {
-        console.log(error);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
   }
 

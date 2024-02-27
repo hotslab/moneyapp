@@ -47,33 +47,16 @@ export default class Account extends BaseModel {
   @beforeSave()
   static async saveAmountAsInteger(account: Account) {
     if (account.$dirty.amount) {
-      console.log('beforeSave INVOKED', account.amount)
       const currency = await Currency.find(account.currencyId)
-      if (currency) {
-        console.log(
-          'BEFORE',
-          account.amount,
-          currency.decimalDigits,
-          currency.decimalDigits <= 0,
-          Math.pow(10, currency.decimalDigits)
-        )
+      if (currency)
         account.amount = Math.round(
           account.amount * (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
         )
-        console.log(
-          'AFTER',
-          account.amount,
-          currency.decimalDigits,
-          currency.decimalDigits <= 0,
-          Math.pow(10, currency.decimalDigits)
-        )
-      }
     }
   }
 
   @afterFind()
   static async getSingleAccount(account: Account) {
-    // const currency = await Currency.find(account.currencyId)
     const currency = await account
       .related('currency')
       .query()
@@ -83,7 +66,6 @@ export default class Account extends BaseModel {
       const balance =
         account.amount / (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
       account.amount = Number.parseFloat(`${balance}`)
-      // account.save()
     }
   }
 
@@ -95,12 +77,10 @@ export default class Account extends BaseModel {
         .query()
         .where('id', account.currencyId)
         .first()
-      // const currency = await Currency.find(account.currencyId)
       if (currency) {
         const balance =
           account.amount / (currency.decimalDigits <= 0 ? 1 : Math.pow(10, currency.decimalDigits))
         account.amount = Number.parseFloat(`${balance}`)
-        // account.save()
       }
     }
   }

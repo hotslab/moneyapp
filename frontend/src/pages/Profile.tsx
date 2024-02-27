@@ -47,11 +47,10 @@ function Profile() {
             }
             setLoading(false);
           },
-          (error) => {
+          (error: AxiosError) => {
+            const message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: error.response?.data
-                ? (error.response.data as any).message
-                : error.message,
+              message: message,
               type: MessageTypes.error,
             });
             setLoading(false);

@@ -45,7 +45,7 @@ function Register() {
           (error: AxiosError) => {
             let message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: message || "Unkonwn error. Please try again.",
+              message: message || "Unknown error. Please try again.",
               type: MessageTypes.error,
             });
             setLoading(false);
@@ -62,7 +62,7 @@ function Register() {
 
   useEffect(() => {
     axiosApi.get("api/currencies").then(
-      (response) => {
+      (response: AxiosResponse) => {
         setCurrencies(response.data.currencies);
         setCurrencyId(
           response.data.currencies.length > 0
@@ -70,9 +70,7 @@ function Register() {
             : ""
         );
       },
-      (error) => {
-        console.log(error);
-      }
+      () => {}
     );
   }, []);
 

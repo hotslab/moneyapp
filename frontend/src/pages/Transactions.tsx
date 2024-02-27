@@ -58,10 +58,7 @@ function Transactions() {
         setTransactions(response.data.transactions);
         setLoading(false);
       },
-      (error) => {
-        console.log(error);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
   }, []);
 

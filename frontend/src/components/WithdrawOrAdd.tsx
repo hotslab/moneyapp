@@ -94,15 +94,7 @@ function WithdrawOrAdd({
             closeWithdrawOrAddModal(true);
           },
           (error) => {
-            let errorBody = error.response?.data as any;
-            let message = "";
-            if (errorBody) {
-              if (errorBody.errors)
-                for (const [index, err] of errorBody.errors.entries())
-                  message += `${index + 1}. ${err.message} `;
-              else if (errorBody.message) message = errorBody.message;
-              else message = error.message;
-            }
+            const message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
               message: message,
               type: MessageTypes.error,

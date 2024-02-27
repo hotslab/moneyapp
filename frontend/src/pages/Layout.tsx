@@ -37,7 +37,6 @@ function Layout() {
     "bg-gray-900 text-white block rounded-md px-3 py-2 text-base font-medium";
 
   function toggleMenu() {
-    console.log(showMenu, "RUNNING");
     setShowMenu(showMenu ? false : true);
   }
 

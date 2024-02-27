@@ -8,6 +8,7 @@ import EmitterEvents from "../types/emitterEvents";
 import useEventEmitter from "../services/useEventEmitter";
 import MessageTypes from "../types/messageTypes";
 import IconCurrencyFill from "../components/IconCurrencyFill";
+import parseAxiosError from "../services/useParseAxiosError";
 
 function ResetPassword() {
   const { dispatch } = useEventEmitter();
@@ -42,10 +43,9 @@ function ResetPassword() {
             navigate("/login");
           },
           (error: AxiosError) => {
+            const message = parseAxiosError(error);
             dispatch(EmitterEvents.SHOW_NOTIFICATION, {
-              message: error.response?.data
-                ? (error.response.data as any).message
-                : error.message,
+              message: message,
               type: MessageTypes.error,
             });
             setLoading(false);

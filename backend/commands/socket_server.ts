@@ -33,13 +33,14 @@ export default class SocketServer extends BaseCommand {
     })
 
     io.engine.on('connection_error', (err) => {
-      console.log('SOCKET_CONNECTION_ERROR', err.req) // the request object
-      console.log('SOCKET_CONNECTION_ERROR', err.code) // the error code, for example 1
-      console.log('SOCKET_CONNECTION_ERROR', err.message) // the error message, for example "Session ID unknown"
-      console.log('SOCKET_CONNECTION_ERROR', err.context) // some additional error context
+      this.logger.error(`SOCKET_CONNECTION_ERROR ${err.req}`) // the request object
+      this.logger.error(`SOCKET_CONNECTION_ERROR ${err.code}`) // the error code, for example 1
+      this.logger.error(`SOCKET_CONNECTION_ERROR ${err.message}`) // the error message, for example "Session ID unknown"
+      this.logger.error(`SOCKET_CONNECTION_ERROR ${err.context}`) // some additional error context
     })
     await redis.subscribe('notification', (message, channel) => {
-      console.log(message, channel)
+      this.logger.info(`SOCKET CHANNEL => ${channel}`)
+      this.logger.info(`SOCKET MESSAGE => ${message}`)
       this.logger.info(`Received ${message} from ${channel}`)
       this.logger.info(`SUBSCRIBE => ${message}`)
       io.emit('channel:notification', JSON.parse(message))

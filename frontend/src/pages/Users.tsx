@@ -27,10 +27,7 @@ function Users() {
         setUsers(response.data.users);
         setLoading(false);
       },
-      (error) => {
-        console.log(error);
-        setLoading(false);
-      }
+      () => setLoading(false)
     );
   }, []);
 
