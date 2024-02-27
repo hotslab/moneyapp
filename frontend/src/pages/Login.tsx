@@ -19,8 +19,8 @@ function Login() {
   const { dispatch } = useEventEmitter();
   const navigate: NavigateFunction = useNavigate();
   let location: Location = useLocation();
-  const [email, setEmail] = useState<string>("hotslices7@gmail.com");
-  const [password, setPassword] = useState<string>("tested");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [validator] = useValidator();
   const [loading, setLoading] = useState<boolean>(false);
 
