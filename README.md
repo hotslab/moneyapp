@@ -45,17 +45,18 @@ cp .env.test.example .env
 ```
 
 - NB: The the following `.env` fields need to be filled with the following API keys in order to use their services:  
-        1. **RESEND_API_KEY** :  Create a ==free== Api Key at https://resend.com/docs/api-reference/api-keys/create-api-key  
-        2. **EVERAPI_KEY** : Create a ==free== Api Key at https://freecurrencyapi.com/  
+        1. **RESEND_API_KEY** :  Create a **free** Api Key at https://resend.com/docs/api-reference/api-keys/create-api-key  
+        2. **EVERAPI_KEY** : Create a **free** Api Key at https://freecurrencyapi.com/  
         
 
 #### Starting docker
 
-- Run the following docker command to start the service
+- Run the following docker command to build and start the service simultaneously
 
 ```bash
 docker-compose up --build
 ```
+- In subsequent requests you can omit the `--build` argument to stop rebuilding the containers 
 
 - After it has started you can access the site at the http://localhost:8888.
 
@@ -81,13 +82,30 @@ docker-compose up --build
 #### 4. Front End
 
 - The front end uses ReactJs with TailwindCSS styling to provide a simple interface for client's to transact with.
-- Users can register and login with credentials for security as is standard for financial applications, with email verification to ensure it is them.
+- Users can register and login with credentials for security as is standard for financial applications, with email verification to ensure it is them.  
+![login](/screenshots/login.png) 
+![register](/screenshots/register.png)
 - It allows clients to open multiple foreign currency accounts.
-- it allows clients to deposit and withdraw money into their accounts with a simple simulated page.
-- It allows them to also make transfers between their own multicurrency accounts at the the prevailing exchange rates. 
-- Clients can also pay other users on the system using an currency account they hold, which will be transferred also at the prevailing exchange rate.
-- The system sends real time notifications of successful transactions via sockets or emails.
-
+![client's accounts](/screenshots/accounts.png)
+![new account](/screenshots/new-account.png)
+- it allows clients to deposit and withdraw money into their accounts with a simple simulated page, which in the future will be integrated with real banking interfaces like `PayPal` e.t.c.  
+![deposit or withdraw](/screenshots/deposit-or-withdraw.png)
+- It allows them to also make transfers between their own multicurrency accounts at the the prevailing exchange rates.  
+![client's accounts](/screenshots/accounts.png)
+![select account to transfer to](/screenshots/transfer-page.png)
+![selected account initial transfer page](/screenshots/transfer-waiting.png)
+![selected account currency conversion](/screenshots/transfer-details.png)
+![transfer success notification](/screenshots/transfer-notification.png)
+- Clients can also pay other users on the system using an currency account they hold, which will be transferred also at the prevailing exchange rate.  
+![client's accounts](/screenshots/accounts.png)
+![list of users to transfer to](/screenshots/users.png)
+![accounts of selected user](/screenshots/user-to-pay.png)
+![initial payment page](/screenshots/payment-page.png)
+![payment currency conversion](/screenshots/payment-details.png)
+![payment success notification](/screenshots/payment-notification.png)
+- The system sends real time notifications of successful transactions via sockets or emails.  
+![list of notifications](/screenshots/notifications.png)
+![viewed notification](/screenshots/viewed-notification.png)
 
 #### 5. Back End
 

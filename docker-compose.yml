@@ -7,7 +7,7 @@ networks:
 
 services:
   moneyapp_postgres:
-    image : postgres:16.1
+    image: postgres:16.1
     container_name: moneyapp_postgres
     environment:
       POSTGRES_PASSWORD: example
@@ -20,9 +20,14 @@ services:
     restart: unless-stopped
     networks:
       - moneyapp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
-  moneyapp_redis: 
-    image : redis:7.2.4
+  moneyapp_redis:
+    image: redis:7.2.4
     container_name: moneyapp_redis
     volumes:
       - ./redis:/data
@@ -32,10 +37,11 @@ services:
     networks:
       - moneyapp_network
     depends_on:
-      - moneyapp_postgres
+      moneyapp_postgres:
+        condition: service_healthy
 
   moneyapp_backend:
-    image : moneyapp_backend
+    image: moneyapp_backend
     # cpus: 2
     container_name: moneyapp_backend
     build:
@@ -54,19 +60,21 @@ services:
       - CHOKIDAR_USEPOLLING=1
       - CHOKIDAR_INTERVAL=6000
     depends_on:
-      - moneyapp_postgres
-      - moneyapp_redis
+      moneyapp_postgres:
+        condition: service_healthy
+      moneyapp_redis:
+        condition: service_started
 
   moneyapp_frontend:
-    image : moneyapp_frontend
+    image: moneyapp_frontend
     container_name: moneyapp_frontend
     build:
       context: ./
       dockerfile: frontend.dockerfile
     volumes:
-       - ./frontend:/var/www
-       - /var/www/node_modules
-       - ./npmCacheFrontend:/root/.npm
+      - ./frontend:/var/www
+      - /var/www/node_modules
+      - ./npmCacheFrontend:/root/.npm
     ports:
       - 3000:3000
     networks:
@@ -79,7 +87,7 @@ services:
       - moneyapp_backend
 
   moneyapp_nginx:
-    image : nginx
+    image: nginx
     container_name: moneyapp_nginx
     restart: unless-stopped
     build:

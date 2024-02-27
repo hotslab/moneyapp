@@ -94,12 +94,12 @@ export default class Transaction extends BaseModel {
     try {
       if (transaction.$dirty.conversionRate) {
         console.log(
-          'CONVERTED AMOUNT',
+          'CONVERTED AMOUN to 6',
           transaction.conversionRate,
-          Number.parseFloat(Number.parseFloat(`${transaction.conversionRate}`).toFixed(5))
+          Number.parseFloat(Number.parseFloat(`${transaction.conversionRate}`).toFixed(6))
         )
         transaction.conversionRate = Number.parseFloat(
-          Number.parseFloat(`${transaction.conversionRate}`).toFixed(5)
+          Number.parseFloat(`${transaction.conversionRate}`).toFixed(6)
         )
       }
     } catch (error) {

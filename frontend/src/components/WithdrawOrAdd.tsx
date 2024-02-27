@@ -157,7 +157,7 @@ function WithdrawOrAdd({
                         className="text-xl capitalize mb-3 font-semibold leading-6 text-gray-700 mb-3"
                         id="modal-title"
                       >
-                        Direct Deposit or Withdraw from Account No. {account.id}
+                        Deposit or Withdraw from Account No. {account.id}
                       </h1>
                       <p className="text-3xl font-semibold my-4 leading-6 text-gray-500 py-3">
                         Balance Available:
@@ -169,7 +169,7 @@ function WithdrawOrAdd({
                       </p>
                       <div className="mt-2 py-3">
                         <label className="block text-sm font-medium leading-6 text-gray-900">
-                          Bank Account Number
+                          Bank Account Number <span className="text-gray-500">e.g. 242342342342342</span>
                         </label>
                         <div className="mt-2">
                           <input
@@ -184,7 +184,7 @@ function WithdrawOrAdd({
                             {validator.current.message(
                               "bankAccountNumber",
                               bankAccountNumber,
-                              "required|numeric"
+                              "required|numeric|size:15"
                             )}
                           </span>
                         </div>
@@ -211,7 +211,7 @@ function WithdrawOrAdd({
                       </div>
                       <div className="mt-2 py-3">
                         <label className="block text-sm font-medium leading-6 text-gray-900">
-                          User Name
+                          Name
                         </label>
                         <div className="mt-2">
                           <input

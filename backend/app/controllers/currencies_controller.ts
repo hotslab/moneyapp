@@ -21,6 +21,7 @@ export default class CurrenciesController {
     { request, response }: HttpContext,
     currencyExchangeService: CurrencyExchangeService
   ) {
+    console.log('testing', env.get('EVERAPI_KEY'))
     const payload = await request.validateUsing(currencyConversionValidator)
 
     let rate: number | null = null

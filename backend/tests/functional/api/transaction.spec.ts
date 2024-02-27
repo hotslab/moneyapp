@@ -144,7 +144,7 @@ test.group('Api transaction', (group) => {
     const senderAmount = faker.number.float({ min: 1000, max: 4500, fractionDigits: 2 })
     const response = await client
       .post(`api/transactions`)
-      .header('idempotency_key', uuid)
+      .header('idempotencyKey', uuid)
       .json({
         transaction_type: TransactionTypes.PAYMENT,
         conversion_rate: currencyRate,

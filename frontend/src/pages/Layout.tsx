@@ -48,8 +48,8 @@ function Layout() {
 
   function logOut() {
     setShowMenu(false);
-    sessionStorage.removeItem("authUser");
     setAuthUser(null);
+    sessionStorage.clear();
     navigate("/");
   }
 
