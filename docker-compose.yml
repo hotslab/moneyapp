@@ -14,7 +14,7 @@ services:
       POSTGRES_MULTIPLE_DATABASES: moneyapp,moneyappdev,moneyapptest
     volumes:
       - ./pgdata:/var/lib/postgresql/data
-      - ./postgre-init.sh:/docker-entrypoint-initdb.d/postgre-init.sh
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/postgres-init.sh
     ports:
       - 5432:5432
     restart: unless-stopped
